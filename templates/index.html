@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>HomeKey NFC Intercom Bridge</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <h1>HomeKey NFC Intercom Bridge</h1>
+    <div class="status">
+      <span id="mqtt-dot" class="dot dot-unknown"></span>
+      <span id="mqtt-text">MQTT: unbekannt</span>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab-btn active" data-tab="dashboard">Dashboard</button>
+    <button class="tab-btn" data-tab="credentials">Zugangskarten</button>
+    <button class="tab-btn" data-tab="settings">Einstellungen</button>
+  </nav>
+
+  <main>
+    <section id="tab-dashboard" class="tab-panel active">
+      <div class="card">
+        <h2>Tuer manuell oeffnen</h2>
+        <p class="muted">Loest dieselbe Aktion aus wie ein erfolgreicher Tap (Test der Ring-Intercom- und/oder Riegel-Anbindung).</p>
+        <button id="btn-open" class="btn btn-primary">Tuer jetzt oeffnen</button>
+        <span id="open-result" class="inline-msg"></span>
+      </div>
+
+      <div class="card">
+        <h2>Live-Ereignisse</h2>
+        <p class="muted">Jeder Tap am HomeKey-ESP32-Leser erscheint hier sofort - egal ob HomeKey oder NFC-Tag.</p>
+        <ul id="live-feed" class="feed"></ul>
+      </div>
+
+      <div class="card">
+        <h2>Letzte Zugriffe</h2>
+        <table class="table" id="log-table">
+          <thead>
+            <tr><th>Zeit</th><th>Typ</th><th>Kennung</th><th>Name</th><th>Ergebnis</th><th>Grund</th><th>Aktion</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="tab-credentials" class="tab-panel">
+      <div class="card">
+        <h2>Neuen NFC-Tag anlernen</h2>
+        <p class="muted">Klicke auf "Anlernen starten", halte den Tag anschliessend an den HomeKey-ESP32-Leser. Die UID wird automatisch erfasst.</p>
+        <div class="row">
+          <button id="btn-learn-start" class="btn btn-secondary">Anlernen starten (NFC-Tag)</button>
+          <button id="btn-learn-cancel" class="btn btn-ghost" disabled>Abbrechen</button>
+        </div>
+        <div id="learn-status" class="inline-msg"></div>
+        <form id="learn-form" class="row learn-form" hidden>
+          <input type="hidden" id="learn-kind" />
+          <input type="hidden" id="learn-identifier" />
+          <span id="learn-identifier-display" class="mono"></span>
+          <input type="text" id="learn-name" placeholder="Name (z.B. Schluesselanhaenger Anna)" />
+          <button type="submit" class="btn btn-primary">Speichern</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2>HomeKey manuell hinzufuegen</h2>
+        <p class="muted">Normalerweise nicht noetig - jeder gueltige HomeKey-Tap wird bereits vertraut (siehe Einstellungen). Nur relevant, wenn du HomeKey-Taps auf bestimmte Endpoint-IDs einschraenken willst.</p>
+        <form id="add-homekey-form" class="row">
+          <input type="text" id="hk-endpoint-id" placeholder="Endpoint-ID (Hex, aus dem Live-Feed)" class="mono" />
+          <input type="text" id="hk-name" placeholder="Name" />
+          <button type="submit" class="btn btn-secondary">Hinzufuegen</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2>Bekannte Zugangskarten</h2>
+        <table class="table" id="cred-table">
+          <thead>
+            <tr><th>Typ</th><th>Kennung</th><th>Name</th><th>Aktiv</th><th>Benutzt</th><th></th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="tab-settings" class="tab-panel">
+      <form id="settings-form">
+        <div class="card">
+          <h2>MQTT-Broker</h2>
+          <p class="muted">Derselbe Broker, an den auch HomeKey-ESP32 und ring-mqtt angeschlossen sind.</p>
+          <div class="grid2">
+            <label>Host<input type="text" name="mqtt.host" placeholder="192.168.1.10" /></label>
+            <label>Port<input type="number" name="mqtt.port" placeholder="1883" /></label>
+            <label>Benutzername<input type="text" name="mqtt.username" /></label>
+            <label>Passwort<input type="password" name="mqtt.password" /></label>
+            <label>Client-ID<input type="text" name="mqtt.client_id" /></label>
+            <label class="checkbox"><input type="checkbox" name="mqtt.tls" /> TLS/SSL verwenden</label>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>HomeKey-ESP32</h2>
+          <p class="muted">Die Geraete/Client-ID aus der MQTT-Konfiguration deines HomeKey-ESP32 (Web-UI &rarr; Settings &rarr; MQTT). Topics werden daraus automatisch abgeleitet, koennen bei Bedarf aber ueberschrieben werden.</p>
+          <div class="grid2">
+            <label>Geraete-/Client-ID<input type="text" name="homekey.device_id" placeholder="HK-AABBCC" /></label>
+            <label>Auth-Topic (Taps)<input type="text" name="homekey.auth_topic" /></label>
+            <label>Lock-Target-State-Topic<input type="text" name="homekey.lock_target_state_topic" /></label>
+            <label class="checkbox"><input type="checkbox" name="homekey.trust_all_homekey_taps" /> Jedem gueltigen HomeKey-Tap vertrauen</label>
+            <label class="checkbox"><input type="checkbox" name="homekey.also_trigger_local_lock" /> Zusaetzlich lokalen Riegel/Relais ansteuern</label>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Ring-Intercom (ring-mqtt)</h2>
+          <p class="muted">Ring-mqtt bildet die Gegensprechanlage als "lock"-Geraet ab. Das genaue Topic haengt von deiner location_id/device_id ab - nutze die automatische Suche oder trage es manuell ein.</p>
+          <div class="grid2">
+            <label class="checkbox"><input type="checkbox" name="ring.enabled" /> Ring-Intercom-Steuerung aktivieren</label>
+            <label>Befehls-Topic<input type="text" name="ring.command_topic" placeholder="ring/&lt;location_id&gt;/lock/&lt;device_id&gt;/command" /></label>
+            <label>Payload zum Oeffnen<input type="text" name="ring.unlock_payload" placeholder="unlock" /></label>
+          </div>
+          <div class="row">
+            <button type="button" id="btn-discover-ring" class="btn btn-secondary">Ring-Topics automatisch suchen</button>
+          </div>
+          <div id="ring-discovery-status" class="inline-msg"></div>
+          <ul id="ring-candidates" class="feed"></ul>
+        </div>
+
+        <div class="card">
+          <h2>Zugriff</h2>
+          <div class="grid2">
+            <label>Sperrzeit nach Tap (Sekunden)<input type="number" name="access.cooldown_seconds" /></label>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Einstellungen speichern</button>
+        <span id="settings-result" class="inline-msg"></span>
+      </form>
+    </section>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

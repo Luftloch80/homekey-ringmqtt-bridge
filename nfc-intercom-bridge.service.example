@@ -1,0 +1,15 @@
+[Unit]
+Description=HomeKey-ESP32 NFC Intercom Bridge
+After=network-online.target mosquitto.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=homeassistant
+WorkingDirectory=/opt/nfc-intercom-bridge
+ExecStart=/opt/nfc-intercom-bridge/.venv/bin/python app.py --config /opt/nfc-intercom-bridge/config.json --db /opt/nfc-intercom-bridge/bridge.db
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

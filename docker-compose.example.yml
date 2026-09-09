@@ -1,0 +1,9 @@
+services:
+  nfc-intercom-bridge:
+    build: .
+    container_name: nfc-intercom-bridge
+    restart: unless-stopped
+    ports:
+      - "8098:8098"
+    volumes:
+      - ./data:/app/data

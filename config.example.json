@@ -1,0 +1,32 @@
+{
+  "mqtt": {
+    "host": "192.168.1.10",
+    "port": 1883,
+    "username": "",
+    "password": "",
+    "client_id": "nfc-intercom-bridge",
+    "tls": false,
+    "tls_insecure": false
+  },
+  "homekey": {
+    "device_id": "HK-AABBCC",
+    "auth_topic": "",
+    "lock_target_state_topic": "",
+    "lock_state_topic": "",
+    "availability_topic": "",
+    "trust_all_homekey_taps": true,
+    "also_trigger_local_lock": false
+  },
+  "ring": {
+    "enabled": true,
+    "command_topic": "ring/XXXXXXXXXXXX/lock/YYYYYYYYYYYY/command",
+    "unlock_payload": "unlock"
+  },
+  "access": {
+    "cooldown_seconds": 3
+  },
+  "web": {
+    "host": "0.0.0.0",
+    "port": 8098
+  }
+}
