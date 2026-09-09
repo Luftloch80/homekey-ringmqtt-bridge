@@ -12,12 +12,15 @@
     <div class="status">
       <span id="mqtt-dot" class="dot dot-unknown"></span>
       <span id="mqtt-text">MQTT: unbekannt</span>
+      <span id="ring-account-dot" class="dot dot-unknown"></span>
+      <span id="ring-account-text">Ring: unbekannt</span>
     </div>
   </header>
 
   <nav class="tabs">
     <button class="tab-btn active" data-tab="dashboard">Dashboard</button>
     <button class="tab-btn" data-tab="credentials">Zugangskarten</button>
+    <button class="tab-btn" data-tab="ring">Ring</button>
     <button class="tab-btn" data-tab="settings">Einstellungen</button>
   </nav>
 
@@ -115,7 +118,7 @@
 
         <div class="card">
           <h2>Ring-Intercom</h2>
-          <p class="muted">Die Bridge spricht direkt mit der Ring Cloud API - ein separat laufendes ring-mqtt wird nicht mehr benoetigt. Konto und Geraet werden weiter unten eingerichtet.</p>
+          <p class="muted">Die Bridge spricht direkt mit der Ring Cloud API - ein separat laufendes ring-mqtt wird nicht mehr benoetigt. Konto und Geraet werden im Tab "Ring" eingerichtet.</p>
           <div class="grid2">
             <label class="checkbox"><input type="checkbox" name="ring.enabled" /> Ring-Intercom-Steuerung aktivieren</label>
           </div>
@@ -131,7 +134,9 @@
         <button type="submit" class="btn btn-primary">Einstellungen speichern</button>
         <span id="settings-result" class="inline-msg"></span>
       </form>
+    </section>
 
+    <section id="tab-ring" class="tab-panel">
       <div class="card">
         <h2>Ring-Konto</h2>
         <p class="muted">Einmaliger Login mit deinem Ring-Account. Der Zugriffstoken wird danach automatisch erneuert - Zugangsdaten selbst werden nicht gespeichert.</p>
