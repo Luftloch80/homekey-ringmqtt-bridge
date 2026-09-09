@@ -112,6 +112,19 @@ sie nutzt konsequent den bereits vorhandenen HomeKey-ESP32-Leser als
 einzige Hardware. Fuer die Ring-Steuerung ist ausser dem einmaligen
 Konto-Login im Web-Interface keine weitere Software noetig.
 
+### Manuelles Entsperren in der Home-App
+
+Wird der Riegel unabhaengig von einem Tap direkt in der Apple-Home-App
+entsperrt (Schieberegler antippen), meldet HomeKey-ESP32 den neuen
+Zustand ueber `<id>/homekit/state` per MQTT. Die Bridge abonniert dieses
+Topic ebenfalls und oeffnet in diesem Fall zusaetzlich die Ring-Intercom -
+vorausgesetzt, Ring ist aktiviert und ein Geraet ausgewaehlt. Damit das
+nicht mit dem eigenen `also_trigger_local_lock`-Befehl kollidiert (der
+denselben Zustandswechsel ausloest und als Echo auf `homekit/state`
+zurueckkommt), ignoriert die Bridge Meldungen, die innerhalb von 10
+Sekunden nach einem eigenen Entsperr-Befehl eintreffen. Genau wie bei
+Taps gilt zusaetzlich die konfigurierte Cooldown-Zeit.
+
 ## Konfigurationsdatei
 
 `config.json` (siehe `config.example.json`) wird ueber das Web-Interface
@@ -124,6 +137,7 @@ verwaltet, kann aber auch direkt editiert werden:
 | `homekey.auth_topic` | Topic, auf dem Taps veroeffentlicht werden (`<id>/homekey/auth`) |
 | `homekey.trust_all_homekey_taps` | `true` = jeder HomeKey-Tap oeffnet, unabhaengig von der Tag-Liste |
 | `homekey.also_trigger_local_lock` | zusaetzlich `<id>/homekit/set_target_state` = `0` (UNLOCKED) publizieren |
+| `homekey.lock_state_topic` | wird abonniert (`<id>/homekit/state`) - manuelles Entsperren in der Home-App oeffnet zusaetzlich die Ring-Intercom |
 | `ring.enabled` | Ring-Intercom-Steuerung aktiv |
 | `ring.email` / `ring.token` | vom Web-Interface beim Login gesetzt (Refresh-Token, kein Passwort) |
 | `ring.device_id` / `ring.device_name` | ausgewaehlte Ring-Intercom (Web-Interface &rarr; Ring-Konto) |
