@@ -35,6 +35,13 @@ function setMqttStatus(connected) {
   text.textContent = "MQTT: " + (connected ? "verbunden" : "getrennt");
 }
 
+function setRingAccountStatus(authenticated) {
+  const dot = $("#ring-account-dot");
+  const text = $("#ring-account-text");
+  dot.className = "dot " + (authenticated ? "dot-ok" : "dot-bad");
+  text.textContent = "Ring: " + (authenticated ? "angemeldet" : "nicht angemeldet");
+}
+
 // -- Status / SSE ---------------------------------------------------
 async function loadStatus() {
   const status = await api("/api/status");
@@ -265,6 +272,7 @@ let ringOtpPending = false;
 
 function renderRingAccount(ringCfg) {
   const authenticated = Boolean(ringCfg && ringCfg.token);
+  setRingAccountStatus(authenticated);
   $("#ring-login-form").hidden = authenticated;
   $("#ring-account-info").hidden = !authenticated;
   $("#ring-device-picker").hidden = !authenticated;
