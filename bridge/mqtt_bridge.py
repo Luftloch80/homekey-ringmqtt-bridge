@@ -1,7 +1,8 @@
 """MQTT glue: subscribes to HomeKey-ESP32 tap events, applies the access
 control decision (allow-listed NFC tag or trusted HomeKey tap) and, on
-success, publishes the door-open command(s) - to a Ring Intercom via
-ring-mqtt and/or to the HomeKey-ESP32 lock itself.
+success, triggers the door-open action(s) - the Ring Intercom directly via
+the Ring Cloud API (see ``ring_client.py``) and/or the HomeKey-ESP32 lock
+itself via MQTT.
 """
 from __future__ import annotations
 
@@ -15,23 +16,21 @@ import paho.mqtt.client as mqtt
 
 from . import events
 from .config import ConfigStore
+from .ring_client import RingClient
 from .store import Store
 
 log = logging.getLogger("bridge.mqtt")
 
 
 class Bridge:
-    def __init__(self, config: ConfigStore, store: Store):
+    def __init__(self, config: ConfigStore, store: Store, ring_client: RingClient):
         self.config = config
         self.store = store
+        self.ring_client = ring_client
         self.client: mqtt.Client | None = None
         self._connected = False
         self._last_grant: dict[str, float] = {}
         self._lock = threading.RLock()
-
-        # Ring-topic discovery state
-        self._discovery_active = False
-        self._discovery_topics: set[str] = set()
 
         self._connect_client()
 
@@ -101,9 +100,6 @@ class Bridge:
         else:
             log.warning("Kein HomeKey-ESP32 auth_topic konfiguriert.")
 
-        if self._discovery_active:
-            client.subscribe("ring/#", qos=0)
-
     def _on_disconnect(self, client, userdata, rc):
         self._connected = False
         events.publish("mqtt_status", {"connected": False})
@@ -111,10 +107,6 @@ class Bridge:
 
     def _on_message(self, client, userdata, msg):
         try:
-            if self._discovery_active and msg.topic.startswith("ring/"):
-                self._discovery_topics.add(msg.topic)
-                return
-
             cfg = self.config.get()
             if msg.topic == cfg["homekey"].get("auth_topic"):
                 self._handle_auth_message(msg.payload)
@@ -218,8 +210,8 @@ class Bridge:
         cfg = self.config.get()
         actions = []
 
-        if cfg["ring"].get("enabled") and cfg["ring"].get("command_topic"):
-            if self.publish(cfg["ring"]["command_topic"], cfg["ring"].get("unlock_payload", "unlock")):
+        if cfg["ring"].get("enabled") and cfg["ring"].get("device_id"):
+            if self.ring_client.open_door():
                 actions.append("ring-intercom")
             else:
                 actions.append("ring-intercom(fehlgeschlagen)")
@@ -295,28 +287,3 @@ class Bridge:
                 self._learn_armed = False
                 armed = False
             return {"armed": armed, "result": result}
-
-    # -- ring topic discovery ---------------------------------------------
-    def start_ring_discovery(self, duration: float = 15.0):
-        self._discovery_topics = set()
-        self._discovery_active = True
-        if self.client and self._connected:
-            self.client.subscribe("ring/#", qos=0)
-
-        def _stop_later():
-            time.sleep(duration)
-            self._discovery_active = False
-            if self.client and self._connected:
-                self.client.unsubscribe("ring/#")
-
-        threading.Thread(target=_stop_later, daemon=True).start()
-
-    def ring_discovery_status(self) -> dict:
-        candidates = sorted(
-            t for t in self._discovery_topics if "lock" in t or "intercom" in t or "command" in t
-        )
-        return {
-            "active": self._discovery_active,
-            "topics": sorted(self._discovery_topics),
-            "candidates": candidates,
-        }

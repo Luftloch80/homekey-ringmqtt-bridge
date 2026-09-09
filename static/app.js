@@ -40,6 +40,7 @@ async function loadStatus() {
   const status = await api("/api/status");
   setMqttStatus(status.mqtt_connected);
   fillSettingsForm(status.config);
+  renderRingAccount(status.config.ring);
 }
 
 function addFeedItem(text) {
@@ -259,28 +260,99 @@ $("#settings-form").addEventListener("submit", async (ev) => {
   }
 });
 
-$("#btn-discover-ring").addEventListener("click", async () => {
-  await api("/api/discover/ring/start", { method: "POST", body: JSON.stringify({ duration: 15 }) });
-  $("#ring-discovery-status").textContent = "Suche laeuft (15s) - loese jetzt ggf. einen Test-Klingel/Unlock in Ring aus...";
-  const timer = setInterval(async () => {
-    const status = await api("/api/discover/ring/status");
-    const list = $("#ring-candidates");
-    list.innerHTML = "";
-    for (const t of status.candidates.length ? status.candidates : status.topics) {
-      const li = document.createElement("li");
-      li.textContent = t;
-      li.style.cursor = "pointer";
-      li.title = "Klicken zum Uebernehmen als Befehls-Topic";
-      li.addEventListener("click", () => {
-        $('input[name="ring.command_topic"]').value = t;
-      });
-      list.appendChild(li);
+// -- Ring-Konto (direkte Cloud-API statt ring-mqtt) ----------------------
+let ringOtpPending = false;
+
+function renderRingAccount(ringCfg) {
+  const authenticated = Boolean(ringCfg && ringCfg.token);
+  $("#ring-login-form").hidden = authenticated;
+  $("#ring-account-info").hidden = !authenticated;
+  $("#ring-device-picker").hidden = !authenticated;
+
+  if (authenticated) {
+    $("#ring-account-email").textContent = ringCfg.email || "?";
+    $("#ring-status").textContent = ringCfg.device_name
+      ? `Intercom: ${ringCfg.device_name}`
+      : "Angemeldet - bitte Intercom-Geraet auswaehlen.";
+  } else {
+    $("#ring-login-form").hidden = false;
+    $("#ring-status").textContent = "Nicht angemeldet.";
+  }
+}
+
+$("#ring-login-form").addEventListener("submit", async (ev) => {
+  ev.preventDefault();
+  const email = $("#ring-email").value.trim();
+  const password = $("#ring-password").value;
+  const otp_code = $("#ring-otp").value.trim();
+  $("#ring-login-result").textContent = "Melde an...";
+  try {
+    const res = await api("/api/ring/login", {
+      method: "POST",
+      body: JSON.stringify({ email, password, otp_code: ringOtpPending ? otp_code : undefined }),
+    });
+    if (res.needs_2fa) {
+      ringOtpPending = true;
+      $("#ring-otp-wrap").hidden = false;
+      $("#ring-otp").focus();
+      $("#ring-login-result").textContent = "2FA-Code erforderlich - wurde per E-Mail/SMS von Ring verschickt.";
+      return;
     }
-    if (!status.active) {
-      clearInterval(timer);
-      $("#ring-discovery-status").textContent = `Fertig, ${status.topics.length} Topics gefunden.`;
+    ringOtpPending = false;
+    $("#ring-otp-wrap").hidden = true;
+    $("#ring-password").value = "";
+    $("#ring-otp").value = "";
+    $("#ring-login-result").textContent = "Angemeldet.";
+    renderRingAccount(res.config.ring);
+    refreshRingDevices();
+  } catch (e) {
+    $("#ring-login-result").textContent = "Fehler: " + e.message;
+  }
+});
+
+$("#btn-ring-logout").addEventListener("click", async () => {
+  if (!confirm("Ring-Konto wirklich abmelden?")) return;
+  const res = await api("/api/ring/logout", { method: "POST" });
+  ringOtpPending = false;
+  renderRingAccount(res.config.ring);
+});
+
+async function refreshRingDevices() {
+  const select = $("#ring-device-select");
+  $("#ring-device-result").textContent = "Lade Geraete...";
+  try {
+    const devices = await api("/api/ring/devices");
+    select.innerHTML = "";
+    for (const d of devices) {
+      const opt = document.createElement("option");
+      opt.value = d.id;
+      opt.textContent = d.name;
+      opt.dataset.name = d.name;
+      select.appendChild(opt);
     }
-  }, 1500);
+    $("#ring-device-result").textContent = devices.length
+      ? `${devices.length} Geraet(e) gefunden.`
+      : "Keine Intercom gefunden.";
+  } catch (e) {
+    $("#ring-device-result").textContent = "Fehler: " + e.message;
+  }
+}
+
+$("#btn-ring-refresh-devices").addEventListener("click", refreshRingDevices);
+
+$("#btn-ring-select-device").addEventListener("click", async () => {
+  const select = $("#ring-device-select");
+  const opt = select.selectedOptions[0];
+  if (!opt) {
+    $("#ring-device-result").textContent = "Bitte zuerst Geraete laden.";
+    return;
+  }
+  const res = await api("/api/ring/select-device", {
+    method: "POST",
+    body: JSON.stringify({ device_id: Number(opt.value), device_name: opt.dataset.name }),
+  });
+  $("#ring-device-result").textContent = "Gespeichert.";
+  renderRingAccount(res.config.ring);
 });
 
 // -- Init ---------------------------------------------------------------
