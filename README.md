@@ -83,9 +83,15 @@ Geraet hat bereits eine kryptographische Authentifizierung durchlaufen,
 bevor HomeKey-ESP32 das Event ueberhaupt veroeffentlicht). Willst du das
 einschraenken (z. B. nur bestimmte iPhones sollen die Intercom oeffnen,
 nicht nur den lokalen Riegel), deaktiviere *"Jedem gueltigen HomeKey-Tap
-vertrauen"* und trage die gewuenschten Endpoint-IDs unter *Zugangskarten
-&rarr; HomeKey manuell hinzufuegen* ein (die ID siehst du im Live-Feed,
-nachdem einmal getappt wurde).
+vertrauen"* in den Einstellungen und trage die gewuenschten Endpoint-IDs
+per API ein (die ID siehst du im Live-Feed, nachdem einmal getappt
+wurde) - eine UI dafuer gibt es aktuell nicht mehr:
+
+```bash
+curl -X POST http://<host>:8098/api/credentials \
+  -H "Content-Type: application/json" \
+  -d '{"kind": "homekey", "identifier": "<Endpoint-ID>", "name": "iPhone Anna"}'
+```
 
 ## Wie die Zugriffsentscheidung funktioniert
 

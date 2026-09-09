@@ -207,17 +207,17 @@ $("#learn-form").addEventListener("submit", async (ev) => {
   loadCredentials();
 });
 
-$("#add-homekey-form").addEventListener("submit", async (ev) => {
+$("#add-nfc-form").addEventListener("submit", async (ev) => {
   ev.preventDefault();
-  const identifier = $("#hk-endpoint-id").value.trim();
-  const name = $("#hk-name").value.trim();
+  const identifier = $("#nfc-uid").value.trim();
+  const name = $("#nfc-name").value.trim();
   if (!identifier) return;
   await api("/api/credentials", {
     method: "POST",
-    body: JSON.stringify({ kind: "homekey", identifier, name }),
+    body: JSON.stringify({ kind: "nfc", identifier, name }),
   });
-  $("#hk-endpoint-id").value = "";
-  $("#hk-name").value = "";
+  $("#nfc-uid").value = "";
+  $("#nfc-name").value = "";
   loadCredentials();
 });
 
