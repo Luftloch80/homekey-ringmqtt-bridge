@@ -66,11 +66,11 @@
       </div>
 
       <div class="card">
-        <h2>HomeKey manuell hinzufuegen</h2>
-        <p class="muted">Normalerweise nicht noetig - jeder gueltige HomeKey-Tap wird bereits vertraut (siehe Einstellungen). Nur relevant, wenn du HomeKey-Taps auf bestimmte Endpoint-IDs einschraenken willst.</p>
-        <form id="add-homekey-form" class="row">
-          <input type="text" id="hk-endpoint-id" placeholder="Endpoint-ID (Hex, aus dem Live-Feed)" class="mono" />
-          <input type="text" id="hk-name" placeholder="Name" />
+        <h2>NFC-Tag manuell hinzufuegen</h2>
+        <p class="muted">Falls du die UID bereits kennst (z.B. vom Hersteller oder aus dem Live-Feed) - Alternative zum Anlernen per Tap oben.</p>
+        <form id="add-nfc-form" class="row">
+          <input type="text" id="nfc-uid" placeholder="UID (Hex ohne Trennzeichen, z.B. 04AABBCC)" class="mono" />
+          <input type="text" id="nfc-name" placeholder="Name" />
           <button type="submit" class="btn btn-secondary">Hinzufuegen</button>
         </form>
       </div>
