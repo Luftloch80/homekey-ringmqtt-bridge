@@ -255,6 +255,15 @@ class Bridge:
                 return
             self._last_grant[key] = now
 
+        # Der HomeKit-Riegel wurde hier manuell (und dauerhaft) entsperrt -
+        # genau wie bei also_trigger_local_lock nach 3s automatisch wieder
+        # verriegeln, damit die Home-App nicht dauerhaft "entsperrt" zeigt.
+        lock_target_state_topic = cfg["homekey"].get("lock_target_state_topic")
+        if lock_target_state_topic:
+            with self._lock:
+                self._last_local_lock_publish_ts = time.time()
+            self._schedule_relock(lock_target_state_topic)
+
         ok = self.ring_client.open_door()
         action = "ring-intercom" if ok else "ring-intercom(fehlgeschlagen)"
         log.info("Manuell in der Home-App entsperrt - Ring-Intercom %s", "geoeffnet" if ok else "Oeffnen fehlgeschlagen")
