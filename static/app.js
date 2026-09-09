@@ -1,11 +1,54 @@
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 
-// -- Tabs (Dropdown) ---------------------------------------------------
-$("#tab-select").addEventListener("change", (ev) => {
-  $$(".tab-panel").forEach((p) => p.classList.remove("active"));
-  $(`#tab-${ev.target.value}`).classList.add("active");
+// -- Sidebar-Navigation ---------------------------------------------------
+function closeSidebar() {
+  $("#sidebar").classList.remove("open");
+  $("#sidebar-overlay").classList.remove("open");
+}
+
+$$(".nav-link").forEach((link) => {
+  link.addEventListener("click", () => {
+    $$(".nav-link").forEach((l) => l.classList.remove("active"));
+    $$(".tab-panel").forEach((p) => p.classList.remove("active"));
+    link.classList.add("active");
+    $(`#tab-${link.dataset.tab}`).classList.add("active");
+    closeSidebar();
+  });
 });
+
+$("#hamburger-btn").addEventListener("click", () => {
+  $("#sidebar").classList.add("open");
+  $("#sidebar-overlay").classList.add("open");
+});
+
+$("#sidebar-overlay").addEventListener("click", closeSidebar);
+
+// -- Hell/Dunkel-Umschalter -----------------------------------------------
+function setSvgHidden(el, hide) {
+  // SVGElement.hidden ist in manchen Browsern nicht zuverlaessig verlinkt -
+  // direkt das Attribut setzen funktioniert unabhaengig vom Elementtyp.
+  if (hide) el.setAttribute("hidden", "");
+  else el.removeAttribute("hidden");
+}
+
+function applyTheme(theme) {
+  document.documentElement.setAttribute("data-theme", theme);
+  setSvgHidden($("#theme-icon-dark"), theme !== "dark");
+  setSvgHidden($("#theme-icon-light"), theme !== "light");
+}
+
+function initTheme() {
+  applyTheme(localStorage.getItem("theme") || "dark");
+}
+
+$("#theme-toggle").addEventListener("click", () => {
+  const next = document.documentElement.getAttribute("data-theme") === "light" ? "dark" : "light";
+  localStorage.setItem("theme", next);
+  applyTheme(next);
+});
+
+initTheme();
 
 // -- Helpers ------------------------------------------------------------
 function fmtTime(ts) {
@@ -39,12 +82,13 @@ function setRingAccountStatus(authenticated) {
 }
 
 function setRingBatteryStatus(battery) {
+  const line = $("#ring-battery-line");
   const el = $("#ring-battery-text");
   if (battery === null || battery === undefined) {
-    el.hidden = true;
+    line.hidden = true;
     return;
   }
-  el.hidden = false;
+  line.hidden = false;
   el.textContent = `Akku: ${battery}%`;
   el.style.color = battery <= 20 ? "var(--danger)" : battery <= 50 ? "var(--warn)" : "var(--ok)";
 }
