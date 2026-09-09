@@ -2,8 +2,8 @@
 
 Web-Oberflaeche + MQTT-Bruecke: laesst dich eigene NFC-Tags anlernen und
 sorgt dafuer, dass sowohl ein Apple-HomeKey-Tap als auch ein bekannter
-NFC-Tag am HomeKey-ESP32-Leser die Ring-Gegensprechanlage (direkt ueber
-die Ring Cloud API) bzw. optional den lokalen Riegel oeffnet.
+NFC-Tag am HomeKey-ESP32-Leser die Ring-Gegensprechanlage direkt ueber
+die Ring Cloud API oeffnet.
 
 Start:
     python app.py [--config config.json] [--db bridge.db]
