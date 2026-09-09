@@ -226,6 +226,7 @@ main { max-width: 900px; margin: 0 auto; padding: 1.5rem; }
 .btn-danger { background: var(--danger); color: #fff; }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .btn-sm { min-height: 32px; padding: 0.35rem 0.7rem; font-size: 0.8rem; }
+.btn-huge { width: 100%; min-height: 4.5rem; font-size: 1.3rem; font-weight: 700; }
 
 .row { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; margin: 0.5rem 0; }
 

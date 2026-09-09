@@ -1,8 +1,7 @@
 """MQTT glue: subscribes to HomeKey-ESP32 tap events, applies the access
 control decision (allow-listed NFC tag or trusted HomeKey tap) and, on
-success, triggers the door-open action(s) - the Ring Intercom directly via
-the Ring Cloud API (see ``ring_client.py``) and/or the HomeKey-ESP32 lock
-itself via MQTT.
+success, opens the Ring Intercom directly via the Ring Cloud API (see
+``ring_client.py``).
 """
 from __future__ import annotations
 
@@ -21,16 +20,6 @@ from .store import Store
 
 log = logging.getLogger("bridge.mqtt")
 
-# Wie lange nach unserem eigenen set_target_state-Publish ein Echo auf dem
-# lock_state_topic noch als "das war unsere eigene Aktion" gilt (statt als
-# eigenstaendiges manuelles Entsperren in der Home-App).
-LOCAL_LOCK_ECHO_WINDOW = 10.0
-
-# Der HomeKey-ESP32-Riegel ist ein Tueroeffner-Impuls, kein Dauerzustand -
-# nach dieser Zeit meldet die Bridge den HomeKit-Riegel wieder als
-# "verriegelt", damit die Home-App nicht dauerhaft "entsperrt" anzeigt.
-LOCAL_LOCK_RELOCK_DELAY = 3.0
-
 
 class Bridge:
     def __init__(self, config: ConfigStore, store: Store, ring_client: RingClient):
@@ -40,7 +29,6 @@ class Bridge:
         self.client: mqtt.Client | None = None
         self._connected = False
         self._last_grant: dict[str, float] = {}
-        self._last_local_lock_publish_ts = 0.0
         self._lock = threading.RLock()
 
         self._connect_client()
@@ -228,19 +216,13 @@ class Bridge:
     def _handle_lock_state_message(self, raw_payload: bytes):
         """HomeKey-ESP32 meldet hier den aktuellen HomeKit-Lock-Zustand -
         auch wenn er nicht ueber die Bridge, sondern direkt in der Home-App
-        (manuell entsperren) ausgeloest wurde. Damit dieser Fall ebenfalls
-        die Ring-Intercom oeffnet, wird jede "entsperrt"-Meldung ausgewertet,
-        die nicht bloss das Echo unseres eigenen set_target_state-Befehls ist.
+        (manuell entsperren) ausgeloest wurde. Jede "entsperrt"-Meldung
+        oeffnet daher zusaetzlich die Ring-Intercom.
         """
         value = raw_payload.decode("utf-8", errors="replace").strip()
         # HomeKit LockCurrentState: 0 == entsperrt (unsecured)
         if value != "0":
             return
-
-        with self._lock:
-            since_own_publish = time.time() - self._last_local_lock_publish_ts
-        if since_own_publish < LOCAL_LOCK_ECHO_WINDOW:
-            return  # Echo unserer eigenen also_trigger_local_lock-Aktion.
 
         cfg = self.config.get()
         if not (cfg["ring"].get("enabled") and cfg["ring"].get("device_id")):
@@ -254,15 +236,6 @@ class Bridge:
             if now - last < cooldown:
                 return
             self._last_grant[key] = now
-
-        # Der HomeKit-Riegel wurde hier manuell (und dauerhaft) entsperrt -
-        # genau wie bei also_trigger_local_lock nach 3s automatisch wieder
-        # verriegeln, damit die Home-App nicht dauerhaft "entsperrt" zeigt.
-        lock_target_state_topic = cfg["homekey"].get("lock_target_state_topic")
-        if lock_target_state_topic:
-            with self._lock:
-                self._last_local_lock_publish_ts = time.time()
-            self._schedule_relock(lock_target_state_topic)
 
         ok = self.ring_client.open_door()
         action = "ring-intercom" if ok else "ring-intercom(fehlgeschlagen)"
@@ -280,36 +253,14 @@ class Bridge:
             },
         )
 
-    def _schedule_relock(self, lock_target_state_topic: str):
-        def _relock():
-            # 1 == LockManager::LOCKED in HomeKey-ESP32
-            self.publish(lock_target_state_topic, "1")
-
-        threading.Timer(LOCAL_LOCK_RELOCK_DELAY, _relock).start()
-
     def _trigger_open(self) -> str:
         cfg = self.config.get()
-        actions = []
-
         if cfg["ring"].get("enabled") and cfg["ring"].get("device_id"):
             if self.ring_client.open_door():
-                actions.append("ring-intercom")
-            else:
-                actions.append("ring-intercom(fehlgeschlagen)")
-
-        if cfg["homekey"].get("also_trigger_local_lock") and cfg["homekey"].get("lock_target_state_topic"):
-            # 0 == LockManager::UNLOCKED in HomeKey-ESP32
-            with self._lock:
-                self._last_local_lock_publish_ts = time.time()
-            if self.publish(cfg["homekey"]["lock_target_state_topic"], "0"):
-                actions.append("homekey-esp32-lock")
-                self._schedule_relock(cfg["homekey"]["lock_target_state_topic"])
-            else:
-                actions.append("homekey-esp32-lock(fehlgeschlagen)")
-
-        if not actions:
-            log.warning("Zugriff gewaehrt, aber keine Aktion konfiguriert (Ring/lokaler Riegel).")
-        return ",".join(actions)
+                return "ring-intercom"
+            return "ring-intercom(fehlgeschlagen)"
+        log.warning("Zugriff gewaehrt, aber Ring-Intercom nicht konfiguriert.")
+        return ""
 
     def manual_open(self) -> str:
         action = self._trigger_open()
@@ -326,14 +277,6 @@ class Bridge:
             },
         )
         return action
-
-    def publish(self, topic: str, payload: str) -> bool:
-        if not self.client or not self._connected:
-            log.error("Kann nicht publizieren, MQTT nicht verbunden (topic=%s)", topic)
-            return False
-        self.client.publish(topic, payload, qos=1, retain=False)
-        log.info("MQTT publish -> %s: %s", topic, payload)
-        return True
 
     # -- learn mode -------------------------------------------------------
     def _maybe_capture_learn(self, kind: str, identifier: str) -> bool:

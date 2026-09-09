@@ -15,8 +15,7 @@ Das Programm spricht **kein** HomeKit, benoetigt fuer HomeKey-ESP32 aber
 weiterhin **MQTT**: Es liest die Tap-Events, die HomeKey-ESP32 sowieso
 schon auf MQTT veroeffentlicht, trifft die Zugriffsentscheidung und
 oeffnet bei Erfolg die Ring Intercom **direkt ueber die Ring Cloud API**
-(Login einmalig im Web-Interface) - optional zusaetzlich den lokalen
-HomeKey-ESP32-Riegel/Relais.
+(Login einmalig im Web-Interface).
 
 Das Web-Interface (Sidebar-Navigation, Hell/Dunkel-Umschalter, Statuspunkte)
 ist optisch an das Web-Interface von HomeKey-ESP32 selbst angelehnt, damit
@@ -64,8 +63,8 @@ Beispiel-Unit unter `nfc-intercom-bridge.service.example` bei.
 2. **Einstellungen &rarr; HomeKey-ESP32**: Die Geraete-/Client-ID
    eintragen, die du in der HomeKey-ESP32-MQTT-Konfiguration vergeben
    hast (Standard-Ableitung: `HK-XXXXXX` aus der MAC-Adresse). Die
-   benoetigten Topics (`<id>/homekey/auth`, `<id>/homekit/set_target_state`,
-   ...) werden daraus automatisch abgeleitet.
+   benoetigten Topics (`<id>/homekey/auth`, `<id>/homekit/state`, ...)
+   werden daraus automatisch abgeleitet.
 3. **Einstellungen &rarr; Ring-Intercom**: "Ring-Intercom-Steuerung
    aktivieren" ankreuzen und speichern.
 4. **Einstellungen &rarr; Ring-Konto**: E-Mail und Passwort deines
@@ -85,9 +84,9 @@ Beispiel-Unit unter `nfc-intercom-bridge.service.example` bei.
 Standardmaessig vertraut die Bridge **jedem** gueltigen HomeKey-Tap (das
 Geraet hat bereits eine kryptographische Authentifizierung durchlaufen,
 bevor HomeKey-ESP32 das Event ueberhaupt veroeffentlicht). Willst du das
-einschraenken (z. B. nur bestimmte iPhones sollen die Intercom oeffnen,
-nicht nur den lokalen Riegel), deaktiviere *"Jedem gueltigen HomeKey-Tap
-vertrauen"* in den Einstellungen und trage die gewuenschten Endpoint-IDs
+einschraenken (z. B. nur bestimmte iPhones sollen die Intercom oeffnen),
+deaktiviere *"Jedem gueltigen HomeKey-Tap vertrauen"* in den
+Einstellungen und trage die gewuenschten Endpoint-IDs
 per API ein (die ID siehst du im Live-Feed, nachdem einmal getappt
 wurde) - eine UI dafuer gibt es aktuell nicht mehr:
 
@@ -108,7 +107,7 @@ HomeKey-ESP32 --MQTT--> <id>/homekey/auth --JSON--> Bridge
                                         |
                                        ja
                                         |
-                Ring Cloud API: Intercom "open door"  (+ optional lokaler Riegel)
+                Ring Cloud API: Intercom "open door"
 ```
 
 Die Bridge selbst haelt keinen eigenen NFC-Leser oder HomeKit-Server -
@@ -122,20 +121,9 @@ Wird der Riegel unabhaengig von einem Tap direkt in der Apple-Home-App
 entsperrt (Schieberegler antippen), meldet HomeKey-ESP32 den neuen
 Zustand ueber `<id>/homekit/state` per MQTT. Die Bridge abonniert dieses
 Topic ebenfalls und oeffnet in diesem Fall zusaetzlich die Ring-Intercom -
-vorausgesetzt, Ring ist aktiviert und ein Geraet ausgewaehlt. Damit das
-nicht mit dem eigenen `also_trigger_local_lock`-Befehl kollidiert (der
-denselben Zustandswechsel ausloest und als Echo auf `homekit/state`
-zurueckkommt), ignoriert die Bridge Meldungen, die innerhalb von 10
-Sekunden nach einem eigenen Entsperr-Befehl eintreffen. Genau wie bei
-Taps gilt zusaetzlich die konfigurierte Cooldown-Zeit.
-
-Der HomeKey-ESP32-Riegel ist als Tueroeffner-Impuls gedacht, kein
-Dauerzustand: Egal ob die Bridge selbst `also_trigger_local_lock`
-ausloest (per Tap oder ueber "Tuer jetzt oeffnen") oder der Riegel wie
-oben beschrieben manuell in der Home-App entsperrt wurde - die Bridge
-setzt den HomeKit-Riegel automatisch nach 3 Sekunden wieder auf
-"verriegelt" zurueck, damit die Home-App nicht dauerhaft "entsperrt"
-anzeigt.
+vorausgesetzt, Ring ist aktiviert und ein Geraet ausgewaehlt. Genau wie
+bei Taps gilt dabei die konfigurierte Cooldown-Zeit gegen wiederholte
+Ausloeser.
 
 ## Konfigurationsdatei
 
@@ -148,7 +136,6 @@ verwaltet, kann aber auch direkt editiert werden:
 | `homekey.device_id` | Geraete-/Client-ID von HomeKey-ESP32 |
 | `homekey.auth_topic` | Topic, auf dem Taps veroeffentlicht werden (`<id>/homekey/auth`) |
 | `homekey.trust_all_homekey_taps` | `true` = jeder HomeKey-Tap oeffnet, unabhaengig von der Tag-Liste |
-| `homekey.also_trigger_local_lock` | zusaetzlich `<id>/homekit/set_target_state` = `0` (UNLOCKED) publizieren |
 | `homekey.lock_state_topic` | wird abonniert (`<id>/homekit/state`) - manuelles Entsperren in der Home-App oeffnet zusaetzlich die Ring-Intercom |
 | `ring.enabled` | Ring-Intercom-Steuerung aktiv |
 | `ring.email` / `ring.token` | vom Web-Interface beim Login gesetzt (Refresh-Token, kein Passwort) |

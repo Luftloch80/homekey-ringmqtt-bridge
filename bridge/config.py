@@ -27,7 +27,6 @@ DEFAULT_CONFIG = {
         # abgeleitet, koennen aber manuell ueberschrieben werden falls in
         # der Firmware andere Topic-Suffixe konfiguriert wurden.
         "auth_topic": "",
-        "lock_target_state_topic": "",
         "lock_state_topic": "",
         "availability_topic": "",
         # Jeder gueltige HomeKey-Tap (vom iPhone/Apple Watch) oeffnet die
@@ -35,9 +34,6 @@ DEFAULT_CONFIG = {
         # HomeKey hat bereits eine kryptographische Authentifizierung
         # durchgefuehrt.
         "trust_all_homekey_taps": True,
-        # Wenn aktiv, wird zusaetzlich zum Ring-Intercom-Befehl auch der
-        # lokale HomeKey-ESP32-Riegel/Relais angesteuert.
-        "also_trigger_local_lock": False,
     },
     "ring": {
         "enabled": False,
@@ -110,8 +106,6 @@ class ConfigStore:
             return
         if not hk.get("auth_topic"):
             hk["auth_topic"] = f"{device_id}/homekey/auth"
-        if not hk.get("lock_target_state_topic"):
-            hk["lock_target_state_topic"] = f"{device_id}/homekit/set_target_state"
         if not hk.get("lock_state_topic"):
             hk["lock_state_topic"] = f"{device_id}/homekit/state"
         if not hk.get("availability_topic"):

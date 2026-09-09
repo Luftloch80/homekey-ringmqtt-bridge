@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>HomeKey NFC Intercom Bridge</title>
+  <title>Homekey Nest Intercom Bridge</title>
   <link rel="stylesheet" href="/static/style.css" />
 </head>
 <body>
@@ -16,7 +16,7 @@
             <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
           </svg>
         </div>
-        <div class="sidebar-title">HomeKey NFC Intercom Bridge</div>
+        <div class="sidebar-title">Homekey Nest Intercom Bridge</div>
       </div>
 
       <div class="sidebar-status">
@@ -57,7 +57,7 @@
             <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
               <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
             </svg>
-            Ring
+            Ring Login
           </button>
         </li>
         <li>
@@ -93,16 +93,14 @@
             <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h8m-8 6h16" />
           </svg>
         </button>
-        <h1>HomeKey NFC Intercom Bridge</h1>
+        <h1>Homekey Nest Intercom Bridge</h1>
       </div>
 
       <main>
         <section id="tab-dashboard" class="tab-panel active">
           <div class="card">
-            <h2>Tür manuell öffnen</h2>
-            <p class="muted">Löst dieselbe Aktion aus wie ein erfolgreicher Tap (Test der Ring-Intercom- und/oder Riegel-Anbindung).</p>
-            <button id="btn-open" class="btn btn-primary">Tür jetzt öffnen</button>
-            <span id="open-result" class="inline-msg"></span>
+            <button id="btn-open" class="btn btn-primary btn-huge">Tür jetzt öffnen</button>
+            <div id="open-result" class="inline-msg"></div>
           </div>
 
           <div class="card">
@@ -186,15 +184,13 @@
               <div class="grid2">
                 <label>Geräte-/Client-ID<input type="text" name="homekey.device_id" placeholder="HK-AABBCC" /></label>
                 <label>Auth-Topic (Taps)<input type="text" name="homekey.auth_topic" /></label>
-                <label>Lock-Target-State-Topic<input type="text" name="homekey.lock_target_state_topic" /></label>
                 <label class="checkbox"><input type="checkbox" name="homekey.trust_all_homekey_taps" /> Jedem gültigen HomeKey-Tap vertrauen</label>
-                <label class="checkbox"><input type="checkbox" name="homekey.also_trigger_local_lock" /> Zusätzlich lokalen Riegel/Relais ansteuern</label>
               </div>
             </div>
 
             <div class="card">
               <h2>Ring-Intercom</h2>
-              <p class="muted">Die Bridge spricht direkt mit der Ring Cloud API - ein separat laufendes ring-mqtt wird nicht mehr benötigt. Konto und Gerät werden im Tab "Ring" eingerichtet.</p>
+              <p class="muted">Die Bridge spricht direkt mit der Ring Cloud API - ein separat laufendes ring-mqtt wird nicht mehr benötigt. Konto und Gerät werden im Tab "Ring Login" eingerichtet.</p>
               <div class="grid2">
                 <label class="checkbox"><input type="checkbox" name="ring.enabled" /> Ring-Intercom-Steuerung aktivieren</label>
               </div>
