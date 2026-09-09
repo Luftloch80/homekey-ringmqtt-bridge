@@ -1,14 +1,10 @@
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 
-// -- Tabs -------------------------------------------------------------
-$$(".tab-btn").forEach((btn) => {
-  btn.addEventListener("click", () => {
-    $$(".tab-btn").forEach((b) => b.classList.remove("active"));
-    $$(".tab-panel").forEach((p) => p.classList.remove("active"));
-    btn.classList.add("active");
-    $(`#tab-${btn.dataset.tab}`).classList.add("active");
-  });
+// -- Tabs (Dropdown) ---------------------------------------------------
+$("#tab-select").addEventListener("change", (ev) => {
+  $$(".tab-panel").forEach((p) => p.classList.remove("active"));
+  $(`#tab-${ev.target.value}`).classList.add("active");
 });
 
 // -- Helpers ------------------------------------------------------------
