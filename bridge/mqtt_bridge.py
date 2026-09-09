@@ -168,7 +168,7 @@ class Bridge:
 
         if kind == "homekey" and cfg["homekey"].get("trust_all_homekey_taps", True):
             granted = True
-            reason = "HomeKey (vertrauenswuerdig)"
+            reason = "HomeKey (vertrauenswürdig)"
             cred = self.store.find_credential("homekey", identifier)
             if cred:
                 name = cred["name"]

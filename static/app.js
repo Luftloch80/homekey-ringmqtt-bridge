@@ -87,7 +87,7 @@ $("#btn-open").addEventListener("click", async () => {
   $("#open-result").textContent = "...";
   try {
     const res = await api("/api/open", { method: "POST" });
-    $("#open-result").textContent = res.action ? `Ausgeloest: ${res.action}` : "Keine Aktion konfiguriert!";
+    $("#open-result").textContent = res.action ? `Ausgelöst: ${res.action}` : "Keine Aktion konfiguriert!";
   } catch (e) {
     $("#open-result").textContent = "Fehler: " + e.message;
   }
@@ -125,7 +125,7 @@ async function loadCredentials() {
       <td><input type="text" data-id="${c.id}" class="cred-name" value="${c.name}" /></td>
       <td><input type="checkbox" data-id="${c.id}" class="cred-enabled" ${c.enabled ? "checked" : ""} /></td>
       <td>${c.use_count}${c.last_used_at ? " (" + fmtTime(c.last_used_at) + ")" : ""}</td>
-      <td><button class="btn btn-danger btn-sm cred-delete" data-id="${c.id}">Loeschen</button></td>
+      <td><button class="btn btn-danger btn-sm cred-delete" data-id="${c.id}">Löschen</button></td>
     `;
     tbody.appendChild(tr);
   }
@@ -148,7 +148,7 @@ async function loadCredentials() {
   });
   $$(".cred-delete").forEach((btn) => {
     btn.addEventListener("click", async () => {
-      if (!confirm("Diese Zugangskarte wirklich loeschen?")) return;
+      if (!confirm("Diese Zugangskarte wirklich löschen?")) return;
       await api(`/api/credentials/${btn.dataset.id}`, { method: "DELETE" });
       loadCredentials();
     });
@@ -281,7 +281,7 @@ function renderRingAccount(ringCfg) {
     $("#ring-account-email").textContent = ringCfg.email || "?";
     $("#ring-status").textContent = ringCfg.device_name
       ? `Intercom: ${ringCfg.device_name}`
-      : "Angemeldet - bitte Intercom-Geraet auswaehlen.";
+      : "Angemeldet - bitte Intercom-Gerät auswählen.";
   } else {
     $("#ring-login-form").hidden = false;
     $("#ring-status").textContent = "Nicht angemeldet.";
@@ -327,7 +327,7 @@ $("#btn-ring-logout").addEventListener("click", async () => {
 
 async function refreshRingDevices() {
   const select = $("#ring-device-select");
-  $("#ring-device-result").textContent = "Lade Geraete...";
+  $("#ring-device-result").textContent = "Lade Geräte...";
   try {
     const devices = await api("/api/ring/devices");
     select.innerHTML = "";
@@ -339,7 +339,7 @@ async function refreshRingDevices() {
       select.appendChild(opt);
     }
     $("#ring-device-result").textContent = devices.length
-      ? `${devices.length} Geraet(e) gefunden.`
+      ? `${devices.length} Gerät(e) gefunden.`
       : "Keine Intercom gefunden.";
   } catch (e) {
     $("#ring-device-result").textContent = "Fehler: " + e.message;
@@ -352,7 +352,7 @@ $("#btn-ring-select-device").addEventListener("click", async () => {
   const select = $("#ring-device-select");
   const opt = select.selectedOptions[0];
   if (!opt) {
-    $("#ring-device-result").textContent = "Bitte zuerst Geraete laden.";
+    $("#ring-device-result").textContent = "Bitte zuerst Geräte laden.";
     return;
   }
   const res = await api("/api/ring/select-device", {

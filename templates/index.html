@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>HomeKey NFC Intercom Bridge</title>
   <link rel="stylesheet" href="/static/style.css" />
 </head>
@@ -27,9 +27,9 @@
   <main>
     <section id="tab-dashboard" class="tab-panel active">
       <div class="card">
-        <h2>Tuer manuell oeffnen</h2>
-        <p class="muted">Loest dieselbe Aktion aus wie ein erfolgreicher Tap (Test der Ring-Intercom- und/oder Riegel-Anbindung).</p>
-        <button id="btn-open" class="btn btn-primary">Tuer jetzt oeffnen</button>
+        <h2>Tür manuell öffnen</h2>
+        <p class="muted">Löst dieselbe Aktion aus wie ein erfolgreicher Tap (Test der Ring-Intercom- und/oder Riegel-Anbindung).</p>
+        <button id="btn-open" class="btn btn-primary">Tür jetzt öffnen</button>
         <span id="open-result" class="inline-msg"></span>
       </div>
 
@@ -41,19 +41,21 @@
 
       <div class="card">
         <h2>Letzte Zugriffe</h2>
-        <table class="table" id="log-table">
-          <thead>
-            <tr><th>Zeit</th><th>Typ</th><th>Kennung</th><th>Name</th><th>Ergebnis</th><th>Grund</th><th>Aktion</th></tr>
-          </thead>
-          <tbody></tbody>
-        </table>
+        <div class="table-wrap">
+          <table class="table" id="log-table">
+            <thead>
+              <tr><th>Zeit</th><th>Typ</th><th>Kennung</th><th>Name</th><th>Ergebnis</th><th>Grund</th><th>Aktion</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
       </div>
     </section>
 
     <section id="tab-credentials" class="tab-panel">
       <div class="card">
         <h2>Neuen NFC-Tag anlernen</h2>
-        <p class="muted">Klicke auf "Anlernen starten", halte den Tag anschliessend an den HomeKey-ESP32-Leser. Die UID wird automatisch erfasst.</p>
+        <p class="muted">Klicke auf "Anlernen starten", halte den Tag anschließend an den HomeKey-ESP32-Leser. Die UID wird automatisch erfasst.</p>
         <div class="row">
           <button id="btn-learn-start" class="btn btn-secondary">Anlernen starten (NFC-Tag)</button>
           <button id="btn-learn-cancel" class="btn btn-ghost" disabled>Abbrechen</button>
@@ -63,29 +65,31 @@
           <input type="hidden" id="learn-kind" />
           <input type="hidden" id="learn-identifier" />
           <span id="learn-identifier-display" class="mono"></span>
-          <input type="text" id="learn-name" placeholder="Name (z.B. Schluesselanhaenger Anna)" />
+          <input type="text" id="learn-name" placeholder="Name (z.B. Schlüsselanhänger Anna)" />
           <button type="submit" class="btn btn-primary">Speichern</button>
         </form>
       </div>
 
       <div class="card">
-        <h2>NFC-Tag manuell hinzufuegen</h2>
+        <h2>NFC-Tag manuell hinzufügen</h2>
         <p class="muted">Falls du die UID bereits kennst (z.B. vom Hersteller oder aus dem Live-Feed) - Alternative zum Anlernen per Tap oben.</p>
         <form id="add-nfc-form" class="row">
           <input type="text" id="nfc-uid" placeholder="UID (Hex ohne Trennzeichen, z.B. 04AABBCC)" class="mono" />
           <input type="text" id="nfc-name" placeholder="Name" />
-          <button type="submit" class="btn btn-secondary">Hinzufuegen</button>
+          <button type="submit" class="btn btn-secondary">Hinzufügen</button>
         </form>
       </div>
 
       <div class="card">
         <h2>Bekannte Zugangskarten</h2>
-        <table class="table" id="cred-table">
-          <thead>
-            <tr><th>Typ</th><th>Kennung</th><th>Name</th><th>Aktiv</th><th>Benutzt</th><th></th></tr>
-          </thead>
-          <tbody></tbody>
-        </table>
+        <div class="table-wrap">
+          <table class="table" id="cred-table">
+            <thead>
+              <tr><th>Typ</th><th>Kennung</th><th>Name</th><th>Aktiv</th><th>Benutzt</th><th></th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
       </div>
     </section>
 
@@ -106,19 +110,19 @@
 
         <div class="card">
           <h2>HomeKey-ESP32</h2>
-          <p class="muted">Die Geraete/Client-ID aus der MQTT-Konfiguration deines HomeKey-ESP32 (Web-UI &rarr; Settings &rarr; MQTT). Topics werden daraus automatisch abgeleitet, koennen bei Bedarf aber ueberschrieben werden.</p>
+          <p class="muted">Die Geräte-/Client-ID aus der MQTT-Konfiguration deines HomeKey-ESP32 (Web-UI &rarr; Settings &rarr; MQTT). Topics werden daraus automatisch abgeleitet, können bei Bedarf aber überschrieben werden.</p>
           <div class="grid2">
-            <label>Geraete-/Client-ID<input type="text" name="homekey.device_id" placeholder="HK-AABBCC" /></label>
+            <label>Geräte-/Client-ID<input type="text" name="homekey.device_id" placeholder="HK-AABBCC" /></label>
             <label>Auth-Topic (Taps)<input type="text" name="homekey.auth_topic" /></label>
             <label>Lock-Target-State-Topic<input type="text" name="homekey.lock_target_state_topic" /></label>
-            <label class="checkbox"><input type="checkbox" name="homekey.trust_all_homekey_taps" /> Jedem gueltigen HomeKey-Tap vertrauen</label>
-            <label class="checkbox"><input type="checkbox" name="homekey.also_trigger_local_lock" /> Zusaetzlich lokalen Riegel/Relais ansteuern</label>
+            <label class="checkbox"><input type="checkbox" name="homekey.trust_all_homekey_taps" /> Jedem gültigen HomeKey-Tap vertrauen</label>
+            <label class="checkbox"><input type="checkbox" name="homekey.also_trigger_local_lock" /> Zusätzlich lokalen Riegel/Relais ansteuern</label>
           </div>
         </div>
 
         <div class="card">
           <h2>Ring-Intercom</h2>
-          <p class="muted">Die Bridge spricht direkt mit der Ring Cloud API - ein separat laufendes ring-mqtt wird nicht mehr benoetigt. Konto und Geraet werden im Tab "Ring" eingerichtet.</p>
+          <p class="muted">Die Bridge spricht direkt mit der Ring Cloud API - ein separat laufendes ring-mqtt wird nicht mehr benötigt. Konto und Gerät werden im Tab "Ring" eingerichtet.</p>
           <div class="grid2">
             <label class="checkbox"><input type="checkbox" name="ring.enabled" /> Ring-Intercom-Steuerung aktivieren</label>
           </div>
@@ -158,11 +162,11 @@
         </div>
 
         <div id="ring-device-picker" class="row" hidden>
-          <label>Intercom-Geraet
+          <label>Intercom-Gerät
             <select id="ring-device-select"></select>
           </label>
-          <button type="button" id="btn-ring-refresh-devices" class="btn btn-secondary">Geraete laden</button>
-          <button type="button" id="btn-ring-select-device" class="btn btn-primary">Uebernehmen</button>
+          <button type="button" id="btn-ring-refresh-devices" class="btn btn-secondary">Geräte laden</button>
+          <button type="button" id="btn-ring-select-device" class="btn btn-primary">Übernehmen</button>
           <span id="ring-device-result" class="inline-msg"></span>
         </div>
       </div>
