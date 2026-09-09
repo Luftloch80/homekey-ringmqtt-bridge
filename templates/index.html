@@ -7,174 +7,245 @@
   <link rel="stylesheet" href="/static/style.css" />
 </head>
 <body>
-  <header class="topbar">
-    <h1>HomeKey NFC Intercom Bridge</h1>
-    <div class="status">
-      <span id="mqtt-dot" class="dot dot-unknown"></span>
-      <span id="mqtt-text">MQTT: unbekannt</span>
-      <span id="ring-account-dot" class="dot dot-unknown"></span>
-      <span id="ring-account-text">Ring: unbekannt</span>
-      <span id="ring-battery-text" hidden></span>
+  <div class="app-shell">
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">
+          <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+          </svg>
+        </div>
+        <div class="sidebar-title">HomeKey NFC Intercom Bridge</div>
+      </div>
+
+      <div class="sidebar-status">
+        <div class="status-line">
+          <span id="mqtt-dot" class="dot dot-unknown"></span>
+          <span id="mqtt-text">MQTT: unbekannt</span>
+        </div>
+        <div class="status-line">
+          <span id="ring-account-dot" class="dot dot-unknown"></span>
+          <span id="ring-account-text">Ring: unbekannt</span>
+        </div>
+        <div class="status-line" id="ring-battery-line" hidden>
+          <span id="ring-battery-text"></span>
+        </div>
+      </div>
+
+      <hr class="divider" />
+
+      <ul class="nav-menu" id="nav-menu">
+        <li>
+          <button type="button" class="nav-link active" data-tab="dashboard">
+            <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75" />
+            </svg>
+            Dashboard
+          </button>
+        </li>
+        <li>
+          <button type="button" class="nav-link" data-tab="credentials">
+            <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 19.5h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5zm6-10.125a1.875 1.875 0 11-3.75 0 1.875 1.875 0 013.75 0zm1.294 6.336a6.721 6.721 0 01-3.17.789 6.721 6.721 0 01-3.168-.789 3.376 3.376 0 016.338 0zM15 9h3.75M15 12h3.75M15 15h3.75" />
+            </svg>
+            Zugangskarten
+          </button>
+        </li>
+        <li>
+          <button type="button" class="nav-link" data-tab="ring">
+            <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+            </svg>
+            Ring
+          </button>
+        </li>
+        <li>
+          <button type="button" class="nav-link" data-tab="settings">
+            <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            Einstellungen
+          </button>
+        </li>
+      </ul>
+
+      <hr class="divider" />
+
+      <div class="sidebar-footer">
+        <span class="muted" style="font-size: 0.8rem">Design</span>
+        <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Hell/Dunkel umschalten">
+          <svg id="theme-icon-dark" class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
+          </svg>
+          <svg id="theme-icon-light" class="icon" hidden xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+          </svg>
+        </button>
+      </div>
+    </aside>
+
+    <div class="content-area">
+      <div class="mobile-navbar">
+        <button type="button" class="hamburger-btn" id="hamburger-btn" aria-label="Menü öffnen">
+          <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h8m-8 6h16" />
+          </svg>
+        </button>
+        <h1>HomeKey NFC Intercom Bridge</h1>
+      </div>
+
+      <main>
+        <section id="tab-dashboard" class="tab-panel active">
+          <div class="card">
+            <h2>Tür manuell öffnen</h2>
+            <p class="muted">Löst dieselbe Aktion aus wie ein erfolgreicher Tap (Test der Ring-Intercom- und/oder Riegel-Anbindung).</p>
+            <button id="btn-open" class="btn btn-primary">Tür jetzt öffnen</button>
+            <span id="open-result" class="inline-msg"></span>
+          </div>
+
+          <div class="card">
+            <h2>Live-Ereignisse</h2>
+            <p class="muted">Jeder Tap am HomeKey-ESP32-Leser erscheint hier sofort - egal ob HomeKey oder NFC-Tag.</p>
+            <ul id="live-feed" class="feed"></ul>
+          </div>
+
+          <div class="card">
+            <h2>Letzte Zugriffe</h2>
+            <div class="table-wrap">
+              <table class="table" id="log-table">
+                <thead>
+                  <tr><th>Zeit</th><th>Typ</th><th>Kennung</th><th>Name</th><th>Ergebnis</th><th>Grund</th><th>Aktion</th></tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section id="tab-credentials" class="tab-panel">
+          <div class="card">
+            <h2>Neuen NFC-Tag anlernen</h2>
+            <p class="muted">Klicke auf "Anlernen starten", halte den Tag anschließend an den HomeKey-ESP32-Leser. Die UID wird automatisch erfasst.</p>
+            <div class="row">
+              <button id="btn-learn-start" class="btn btn-secondary">Anlernen starten (NFC-Tag)</button>
+              <button id="btn-learn-cancel" class="btn btn-ghost" disabled>Abbrechen</button>
+            </div>
+            <div id="learn-status" class="inline-msg"></div>
+            <form id="learn-form" class="row learn-form" hidden>
+              <input type="hidden" id="learn-kind" />
+              <input type="hidden" id="learn-identifier" />
+              <span id="learn-identifier-display" class="mono"></span>
+              <input type="text" id="learn-name" placeholder="Name (z.B. Schlüsselanhänger Anna)" />
+              <button type="submit" class="btn btn-primary">Speichern</button>
+            </form>
+          </div>
+
+          <div class="card">
+            <h2>NFC-Tag manuell hinzufügen</h2>
+            <p class="muted">Falls du die UID bereits kennst (z.B. vom Hersteller oder aus dem Live-Feed) - Alternative zum Anlernen per Tap oben.</p>
+            <form id="add-nfc-form" class="row">
+              <input type="text" id="nfc-uid" placeholder="UID (Hex ohne Trennzeichen, z.B. 04AABBCC)" class="mono" />
+              <input type="text" id="nfc-name" placeholder="Name" />
+              <button type="submit" class="btn btn-secondary">Hinzufügen</button>
+            </form>
+          </div>
+
+          <div class="card">
+            <h2>Bekannte Zugangskarten</h2>
+            <div class="table-wrap">
+              <table class="table" id="cred-table">
+                <thead>
+                  <tr><th>Typ</th><th>Kennung</th><th>Name</th><th>Aktiv</th><th>Benutzt</th><th></th></tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section id="tab-settings" class="tab-panel">
+          <form id="settings-form">
+            <div class="card">
+              <h2>MQTT-Broker</h2>
+              <p class="muted">Derselbe Broker, an den auch HomeKey-ESP32 angeschlossen ist.</p>
+              <div class="grid2">
+                <label>Host<input type="text" name="mqtt.host" placeholder="192.168.1.10" /></label>
+                <label>Port<input type="number" name="mqtt.port" placeholder="1883" /></label>
+                <label>Benutzername<input type="text" name="mqtt.username" /></label>
+                <label>Passwort<input type="password" name="mqtt.password" /></label>
+                <label>Client-ID<input type="text" name="mqtt.client_id" /></label>
+                <label class="checkbox"><input type="checkbox" name="mqtt.tls" /> TLS/SSL verwenden</label>
+              </div>
+            </div>
+
+            <div class="card">
+              <h2>HomeKey-ESP32</h2>
+              <p class="muted">Die Geräte-/Client-ID aus der MQTT-Konfiguration deines HomeKey-ESP32 (Web-UI &rarr; Settings &rarr; MQTT). Topics werden daraus automatisch abgeleitet, können bei Bedarf aber überschrieben werden.</p>
+              <div class="grid2">
+                <label>Geräte-/Client-ID<input type="text" name="homekey.device_id" placeholder="HK-AABBCC" /></label>
+                <label>Auth-Topic (Taps)<input type="text" name="homekey.auth_topic" /></label>
+                <label>Lock-Target-State-Topic<input type="text" name="homekey.lock_target_state_topic" /></label>
+                <label class="checkbox"><input type="checkbox" name="homekey.trust_all_homekey_taps" /> Jedem gültigen HomeKey-Tap vertrauen</label>
+                <label class="checkbox"><input type="checkbox" name="homekey.also_trigger_local_lock" /> Zusätzlich lokalen Riegel/Relais ansteuern</label>
+              </div>
+            </div>
+
+            <div class="card">
+              <h2>Ring-Intercom</h2>
+              <p class="muted">Die Bridge spricht direkt mit der Ring Cloud API - ein separat laufendes ring-mqtt wird nicht mehr benötigt. Konto und Gerät werden im Tab "Ring" eingerichtet.</p>
+              <div class="grid2">
+                <label class="checkbox"><input type="checkbox" name="ring.enabled" /> Ring-Intercom-Steuerung aktivieren</label>
+              </div>
+            </div>
+
+            <div class="card">
+              <h2>Zugriff</h2>
+              <div class="grid2">
+                <label>Sperrzeit nach Tap (Sekunden)<input type="number" name="access.cooldown_seconds" /></label>
+              </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Einstellungen speichern</button>
+            <span id="settings-result" class="inline-msg"></span>
+          </form>
+        </section>
+
+        <section id="tab-ring" class="tab-panel">
+          <div class="card">
+            <h2>Ring-Konto</h2>
+            <p class="muted">Einmaliger Login mit deinem Ring-Account. Der Zugriffstoken wird danach automatisch erneuert - Zugangsdaten selbst werden nicht gespeichert.</p>
+            <div id="ring-status" class="inline-msg"></div>
+
+            <form id="ring-login-form" class="grid2" hidden>
+              <label>E-Mail<input type="email" id="ring-email" autocomplete="username" /></label>
+              <label>Passwort<input type="password" id="ring-password" autocomplete="current-password" /></label>
+              <label id="ring-otp-wrap" hidden>2FA-Code (per E-Mail/SMS von Ring)<input type="text" id="ring-otp" inputmode="numeric" /></label>
+              <div class="row">
+                <button type="submit" class="btn btn-primary">Anmelden</button>
+                <span id="ring-login-result" class="inline-msg"></span>
+              </div>
+            </form>
+
+            <div id="ring-account-info" class="row" hidden>
+              <span>Angemeldet als <strong id="ring-account-email"></strong></span>
+              <button type="button" id="btn-ring-logout" class="btn btn-ghost">Abmelden</button>
+            </div>
+
+            <div id="ring-device-picker" class="row" hidden>
+              <label>Intercom-Gerät
+                <select id="ring-device-select"></select>
+              </label>
+              <button type="button" id="btn-ring-refresh-devices" class="btn btn-secondary">Geräte laden</button>
+              <button type="button" id="btn-ring-select-device" class="btn btn-primary">Übernehmen</button>
+              <span id="ring-device-result" class="inline-msg"></span>
+            </div>
+          </div>
+        </section>
+      </main>
     </div>
-  </header>
-
-  <nav class="tabs">
-    <select id="tab-select" class="tab-select">
-      <option value="dashboard">Dashboard</option>
-      <option value="credentials">Zugangskarten</option>
-      <option value="ring">Ring</option>
-      <option value="settings">Einstellungen</option>
-    </select>
-  </nav>
-
-  <main>
-    <section id="tab-dashboard" class="tab-panel active">
-      <div class="card">
-        <h2>Tür manuell öffnen</h2>
-        <p class="muted">Löst dieselbe Aktion aus wie ein erfolgreicher Tap (Test der Ring-Intercom- und/oder Riegel-Anbindung).</p>
-        <button id="btn-open" class="btn btn-primary">Tür jetzt öffnen</button>
-        <span id="open-result" class="inline-msg"></span>
-      </div>
-
-      <div class="card">
-        <h2>Live-Ereignisse</h2>
-        <p class="muted">Jeder Tap am HomeKey-ESP32-Leser erscheint hier sofort - egal ob HomeKey oder NFC-Tag.</p>
-        <ul id="live-feed" class="feed"></ul>
-      </div>
-
-      <div class="card">
-        <h2>Letzte Zugriffe</h2>
-        <div class="table-wrap">
-          <table class="table" id="log-table">
-            <thead>
-              <tr><th>Zeit</th><th>Typ</th><th>Kennung</th><th>Name</th><th>Ergebnis</th><th>Grund</th><th>Aktion</th></tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-
-    <section id="tab-credentials" class="tab-panel">
-      <div class="card">
-        <h2>Neuen NFC-Tag anlernen</h2>
-        <p class="muted">Klicke auf "Anlernen starten", halte den Tag anschließend an den HomeKey-ESP32-Leser. Die UID wird automatisch erfasst.</p>
-        <div class="row">
-          <button id="btn-learn-start" class="btn btn-secondary">Anlernen starten (NFC-Tag)</button>
-          <button id="btn-learn-cancel" class="btn btn-ghost" disabled>Abbrechen</button>
-        </div>
-        <div id="learn-status" class="inline-msg"></div>
-        <form id="learn-form" class="row learn-form" hidden>
-          <input type="hidden" id="learn-kind" />
-          <input type="hidden" id="learn-identifier" />
-          <span id="learn-identifier-display" class="mono"></span>
-          <input type="text" id="learn-name" placeholder="Name (z.B. Schlüsselanhänger Anna)" />
-          <button type="submit" class="btn btn-primary">Speichern</button>
-        </form>
-      </div>
-
-      <div class="card">
-        <h2>NFC-Tag manuell hinzufügen</h2>
-        <p class="muted">Falls du die UID bereits kennst (z.B. vom Hersteller oder aus dem Live-Feed) - Alternative zum Anlernen per Tap oben.</p>
-        <form id="add-nfc-form" class="row">
-          <input type="text" id="nfc-uid" placeholder="UID (Hex ohne Trennzeichen, z.B. 04AABBCC)" class="mono" />
-          <input type="text" id="nfc-name" placeholder="Name" />
-          <button type="submit" class="btn btn-secondary">Hinzufügen</button>
-        </form>
-      </div>
-
-      <div class="card">
-        <h2>Bekannte Zugangskarten</h2>
-        <div class="table-wrap">
-          <table class="table" id="cred-table">
-            <thead>
-              <tr><th>Typ</th><th>Kennung</th><th>Name</th><th>Aktiv</th><th>Benutzt</th><th></th></tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-
-    <section id="tab-settings" class="tab-panel">
-      <form id="settings-form">
-        <div class="card">
-          <h2>MQTT-Broker</h2>
-          <p class="muted">Derselbe Broker, an den auch HomeKey-ESP32 angeschlossen ist.</p>
-          <div class="grid2">
-            <label>Host<input type="text" name="mqtt.host" placeholder="192.168.1.10" /></label>
-            <label>Port<input type="number" name="mqtt.port" placeholder="1883" /></label>
-            <label>Benutzername<input type="text" name="mqtt.username" /></label>
-            <label>Passwort<input type="password" name="mqtt.password" /></label>
-            <label>Client-ID<input type="text" name="mqtt.client_id" /></label>
-            <label class="checkbox"><input type="checkbox" name="mqtt.tls" /> TLS/SSL verwenden</label>
-          </div>
-        </div>
-
-        <div class="card">
-          <h2>HomeKey-ESP32</h2>
-          <p class="muted">Die Geräte-/Client-ID aus der MQTT-Konfiguration deines HomeKey-ESP32 (Web-UI &rarr; Settings &rarr; MQTT). Topics werden daraus automatisch abgeleitet, können bei Bedarf aber überschrieben werden.</p>
-          <div class="grid2">
-            <label>Geräte-/Client-ID<input type="text" name="homekey.device_id" placeholder="HK-AABBCC" /></label>
-            <label>Auth-Topic (Taps)<input type="text" name="homekey.auth_topic" /></label>
-            <label>Lock-Target-State-Topic<input type="text" name="homekey.lock_target_state_topic" /></label>
-            <label class="checkbox"><input type="checkbox" name="homekey.trust_all_homekey_taps" /> Jedem gültigen HomeKey-Tap vertrauen</label>
-            <label class="checkbox"><input type="checkbox" name="homekey.also_trigger_local_lock" /> Zusätzlich lokalen Riegel/Relais ansteuern</label>
-          </div>
-        </div>
-
-        <div class="card">
-          <h2>Ring-Intercom</h2>
-          <p class="muted">Die Bridge spricht direkt mit der Ring Cloud API - ein separat laufendes ring-mqtt wird nicht mehr benötigt. Konto und Gerät werden im Tab "Ring" eingerichtet.</p>
-          <div class="grid2">
-            <label class="checkbox"><input type="checkbox" name="ring.enabled" /> Ring-Intercom-Steuerung aktivieren</label>
-          </div>
-        </div>
-
-        <div class="card">
-          <h2>Zugriff</h2>
-          <div class="grid2">
-            <label>Sperrzeit nach Tap (Sekunden)<input type="number" name="access.cooldown_seconds" /></label>
-          </div>
-        </div>
-
-        <button type="submit" class="btn btn-primary">Einstellungen speichern</button>
-        <span id="settings-result" class="inline-msg"></span>
-      </form>
-    </section>
-
-    <section id="tab-ring" class="tab-panel">
-      <div class="card">
-        <h2>Ring-Konto</h2>
-        <p class="muted">Einmaliger Login mit deinem Ring-Account. Der Zugriffstoken wird danach automatisch erneuert - Zugangsdaten selbst werden nicht gespeichert.</p>
-        <div id="ring-status" class="inline-msg"></div>
-
-        <form id="ring-login-form" class="grid2" hidden>
-          <label>E-Mail<input type="email" id="ring-email" autocomplete="username" /></label>
-          <label>Passwort<input type="password" id="ring-password" autocomplete="current-password" /></label>
-          <label id="ring-otp-wrap" hidden>2FA-Code (per E-Mail/SMS von Ring)<input type="text" id="ring-otp" inputmode="numeric" /></label>
-          <div class="row">
-            <button type="submit" class="btn btn-primary">Anmelden</button>
-            <span id="ring-login-result" class="inline-msg"></span>
-          </div>
-        </form>
-
-        <div id="ring-account-info" class="row" hidden>
-          <span>Angemeldet als <strong id="ring-account-email"></strong></span>
-          <button type="button" id="btn-ring-logout" class="btn btn-ghost">Abmelden</button>
-        </div>
-
-        <div id="ring-device-picker" class="row" hidden>
-          <label>Intercom-Gerät
-            <select id="ring-device-select"></select>
-          </label>
-          <button type="button" id="btn-ring-refresh-devices" class="btn btn-secondary">Geräte laden</button>
-          <button type="button" id="btn-ring-select-device" class="btn btn-primary">Übernehmen</button>
-          <span id="ring-device-result" class="inline-msg"></span>
-        </div>
-      </div>
-    </section>
-  </main>
+  </div>
 
   <script src="/static/app.js"></script>
 </body>

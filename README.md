@@ -18,6 +18,10 @@ oeffnet bei Erfolg die Ring Intercom **direkt ueber die Ring Cloud API**
 (Login einmalig im Web-Interface) - optional zusaetzlich den lokalen
 HomeKey-ESP32-Riegel/Relais.
 
+Das Web-Interface (Sidebar-Navigation, Hell/Dunkel-Umschalter, Statuspunkte)
+ist optisch an das Web-Interface von HomeKey-ESP32 selbst angelehnt, damit
+sich beide Oberflaechen wie ein zusammengehoeriges System anfuehlen.
+
 ## Voraussetzungen
 
 - Ein laufender MQTT-Broker (z. B. Mosquitto), an den HomeKey-ESP32
