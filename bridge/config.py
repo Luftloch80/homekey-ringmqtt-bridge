@@ -64,7 +64,10 @@ _lock = threading.Lock()
 def _deep_merge(base: dict, override: dict) -> dict:
     result = copy.deepcopy(base)
     for key, value in override.items():
-        if isinstance(value, dict) and isinstance(result.get(key), dict):
+        # Ein leeres dict als Override kann nur "auf leer zuruecksetzen"
+        # bedeuten - ein rekursiver Merge waere hier ein No-Op und wuerde
+        # den bestehenden Wert (z.B. beim Ring-Logout den Token) nie loeschen.
+        if isinstance(value, dict) and value and isinstance(result.get(key), dict):
             result[key] = _deep_merge(result[key], value)
         else:
             result[key] = value
