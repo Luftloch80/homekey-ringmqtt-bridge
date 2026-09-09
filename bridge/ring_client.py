@@ -100,6 +100,24 @@ class RingClient:
         self._run(ring.async_update_devices())
         return [{"id": dev.id, "name": dev.name} for dev in ring.devices().other]
 
+    def battery_life(self) -> int | None:
+        """Akkustand (0-100) des ausgewaehlten Intercoms, oder None, wenn
+        nicht angemeldet/konfiguriert bzw. das Geraet keinen Akku verbaut hat
+        (der Ring Intercom ist festverdrahtet, ein Akku ist nur optional)."""
+        cfg = self.config.get()
+        device_id = cfg["ring"].get("device_id")
+        with self._lock:
+            ring = self._ring
+        if ring is None or not device_id:
+            return None
+        try:
+            self._run(ring.async_update_devices())
+            device = ring.devices().get_other(int(device_id))
+            return device.battery_life
+        except Exception:
+            log.exception("Ring-Akkustand konnte nicht abgerufen werden")
+            return None
+
     # -- Tuer oeffnen -------------------------------------------------------
     def open_door(self) -> bool:
         cfg = self.config.get()

@@ -9,6 +9,7 @@
   --accent-hover: #1d4ed8;
   --danger: #dc2626;
   --ok: #16a34a;
+  --warn: #d97706;
 }
 
 @media (prefers-color-scheme: dark) {

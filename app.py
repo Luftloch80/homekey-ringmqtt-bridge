@@ -213,6 +213,11 @@ def api_ring_select_device():
     return jsonify({"ok": True, "config": config_store.redacted()})
 
 
+@app.get("/api/ring/battery")
+def api_ring_battery():
+    return jsonify({"battery": ring_client.battery_life()})
+
+
 # -- log ---------------------------------------------------------------
 @app.get("/api/log")
 def api_log():

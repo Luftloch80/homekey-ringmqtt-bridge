@@ -38,6 +38,26 @@ function setRingAccountStatus(authenticated) {
   text.textContent = "Ring: " + (authenticated ? "angemeldet" : "nicht angemeldet");
 }
 
+function setRingBatteryStatus(battery) {
+  const el = $("#ring-battery-text");
+  if (battery === null || battery === undefined) {
+    el.hidden = true;
+    return;
+  }
+  el.hidden = false;
+  el.textContent = `Akku: ${battery}%`;
+  el.style.color = battery <= 20 ? "var(--danger)" : battery <= 50 ? "var(--warn)" : "var(--ok)";
+}
+
+async function loadRingBattery() {
+  try {
+    const res = await api("/api/ring/battery");
+    setRingBatteryStatus(res.battery);
+  } catch (e) {
+    setRingBatteryStatus(null);
+  }
+}
+
 // -- Status / SSE ---------------------------------------------------
 async function loadStatus() {
   const status = await api("/api/status");
@@ -282,6 +302,12 @@ function renderRingAccount(ringCfg) {
     $("#ring-login-form").hidden = false;
     $("#ring-status").textContent = "Nicht angemeldet.";
   }
+
+  if (authenticated && ringCfg.device_id) {
+    loadRingBattery();
+  } else {
+    setRingBatteryStatus(null);
+  }
 }
 
 $("#ring-login-form").addEventListener("submit", async (ev) => {
@@ -364,3 +390,4 @@ loadStatus();
 loadCredentials();
 loadLog();
 connectEvents();
+setInterval(loadRingBattery, 10 * 60 * 1000);
