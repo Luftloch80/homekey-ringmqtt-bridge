@@ -21,6 +21,11 @@ from .store import Store
 
 log = logging.getLogger("bridge.mqtt")
 
+# Wie lange nach unserem eigenen set_target_state-Publish ein Echo auf dem
+# lock_state_topic noch als "das war unsere eigene Aktion" gilt (statt als
+# eigenstaendiges manuelles Entsperren in der Home-App).
+LOCAL_LOCK_ECHO_WINDOW = 10.0
+
 
 class Bridge:
     def __init__(self, config: ConfigStore, store: Store, ring_client: RingClient):
@@ -30,6 +35,7 @@ class Bridge:
         self.client: mqtt.Client | None = None
         self._connected = False
         self._last_grant: dict[str, float] = {}
+        self._last_local_lock_publish_ts = 0.0
         self._lock = threading.RLock()
 
         self._connect_client()
@@ -100,6 +106,11 @@ class Bridge:
         else:
             log.warning("Kein HomeKey-ESP32 auth_topic konfiguriert.")
 
+        lock_state_topic = cfg["homekey"].get("lock_state_topic")
+        if lock_state_topic:
+            client.subscribe(lock_state_topic, qos=0)
+            log.info("Abonniert: %s", lock_state_topic)
+
     def _on_disconnect(self, client, userdata, rc):
         self._connected = False
         events.publish("mqtt_status", {"connected": False})
@@ -110,6 +121,8 @@ class Bridge:
             cfg = self.config.get()
             if msg.topic == cfg["homekey"].get("auth_topic"):
                 self._handle_auth_message(msg.payload)
+            elif msg.topic == cfg["homekey"].get("lock_state_topic"):
+                self._handle_lock_state_message(msg.payload)
         except Exception:
             log.exception("Fehler bei der Verarbeitung einer MQTT-Nachricht")
 
@@ -206,6 +219,53 @@ class Bridge:
             },
         )
 
+    # -- manuelles Entsperren ueber die Home-App -----------------------------
+    def _handle_lock_state_message(self, raw_payload: bytes):
+        """HomeKey-ESP32 meldet hier den aktuellen HomeKit-Lock-Zustand -
+        auch wenn er nicht ueber die Bridge, sondern direkt in der Home-App
+        (manuell entsperren) ausgeloest wurde. Damit dieser Fall ebenfalls
+        die Ring-Intercom oeffnet, wird jede "entsperrt"-Meldung ausgewertet,
+        die nicht bloss das Echo unseres eigenen set_target_state-Befehls ist.
+        """
+        value = raw_payload.decode("utf-8", errors="replace").strip()
+        # HomeKit LockCurrentState: 0 == entsperrt (unsecured)
+        if value != "0":
+            return
+
+        with self._lock:
+            since_own_publish = time.time() - self._last_local_lock_publish_ts
+        if since_own_publish < LOCAL_LOCK_ECHO_WINDOW:
+            return  # Echo unserer eigenen also_trigger_local_lock-Aktion.
+
+        cfg = self.config.get()
+        if not (cfg["ring"].get("enabled") and cfg["ring"].get("device_id")):
+            return
+
+        cooldown = float(cfg["access"].get("cooldown_seconds", 3) or 0)
+        key = "homekit-app"
+        now = time.time()
+        with self._lock:
+            last = self._last_grant.get(key, 0)
+            if now - last < cooldown:
+                return
+            self._last_grant[key] = now
+
+        ok = self.ring_client.open_door()
+        action = "ring-intercom" if ok else "ring-intercom(fehlgeschlagen)"
+        log.info("Manuell in der Home-App entsperrt - Ring-Intercom %s", "geoeffnet" if ok else "Oeffnen fehlgeschlagen")
+        self.store.add_log("homekit", "-", "HomeKit (Home-App)", ok, "Manuell in der Home-App entsperrt", action)
+        events.publish(
+            "access",
+            {
+                "kind": "homekit",
+                "identifier": "-",
+                "name": "HomeKit (Home-App)",
+                "granted": ok,
+                "reason": "Manuell in der Home-App entsperrt",
+                "action": action,
+            },
+        )
+
     def _trigger_open(self) -> str:
         cfg = self.config.get()
         actions = []
@@ -218,6 +278,8 @@ class Bridge:
 
         if cfg["homekey"].get("also_trigger_local_lock") and cfg["homekey"].get("lock_target_state_topic"):
             # 0 == LockManager::UNLOCKED in HomeKey-ESP32
+            with self._lock:
+                self._last_local_lock_publish_ts = time.time()
             if self.publish(cfg["homekey"]["lock_target_state_topic"], "0"):
                 actions.append("homekey-esp32-lock")
             else:
