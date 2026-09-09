@@ -90,7 +90,7 @@
       <form id="settings-form">
         <div class="card">
           <h2>MQTT-Broker</h2>
-          <p class="muted">Derselbe Broker, an den auch HomeKey-ESP32 und ring-mqtt angeschlossen sind.</p>
+          <p class="muted">Derselbe Broker, an den auch HomeKey-ESP32 angeschlossen ist.</p>
           <div class="grid2">
             <label>Host<input type="text" name="mqtt.host" placeholder="192.168.1.10" /></label>
             <label>Port<input type="number" name="mqtt.port" placeholder="1883" /></label>
@@ -114,18 +114,11 @@
         </div>
 
         <div class="card">
-          <h2>Ring-Intercom (ring-mqtt)</h2>
-          <p class="muted">Ring-mqtt bildet die Gegensprechanlage als "lock"-Geraet ab. Das genaue Topic haengt von deiner location_id/device_id ab - nutze die automatische Suche oder trage es manuell ein.</p>
+          <h2>Ring-Intercom</h2>
+          <p class="muted">Die Bridge spricht direkt mit der Ring Cloud API - ein separat laufendes ring-mqtt wird nicht mehr benoetigt. Konto und Geraet werden weiter unten eingerichtet.</p>
           <div class="grid2">
             <label class="checkbox"><input type="checkbox" name="ring.enabled" /> Ring-Intercom-Steuerung aktivieren</label>
-            <label>Befehls-Topic<input type="text" name="ring.command_topic" placeholder="ring/&lt;location_id&gt;/lock/&lt;device_id&gt;/command" /></label>
-            <label>Payload zum Oeffnen<input type="text" name="ring.unlock_payload" placeholder="unlock" /></label>
           </div>
-          <div class="row">
-            <button type="button" id="btn-discover-ring" class="btn btn-secondary">Ring-Topics automatisch suchen</button>
-          </div>
-          <div id="ring-discovery-status" class="inline-msg"></div>
-          <ul id="ring-candidates" class="feed"></ul>
         </div>
 
         <div class="card">
@@ -138,6 +131,36 @@
         <button type="submit" class="btn btn-primary">Einstellungen speichern</button>
         <span id="settings-result" class="inline-msg"></span>
       </form>
+
+      <div class="card">
+        <h2>Ring-Konto</h2>
+        <p class="muted">Einmaliger Login mit deinem Ring-Account. Der Zugriffstoken wird danach automatisch erneuert - Zugangsdaten selbst werden nicht gespeichert.</p>
+        <div id="ring-status" class="inline-msg"></div>
+
+        <form id="ring-login-form" class="grid2" hidden>
+          <label>E-Mail<input type="email" id="ring-email" autocomplete="username" /></label>
+          <label>Passwort<input type="password" id="ring-password" autocomplete="current-password" /></label>
+          <label id="ring-otp-wrap" hidden>2FA-Code (per E-Mail/SMS von Ring)<input type="text" id="ring-otp" inputmode="numeric" /></label>
+          <div class="row">
+            <button type="submit" class="btn btn-primary">Anmelden</button>
+            <span id="ring-login-result" class="inline-msg"></span>
+          </div>
+        </form>
+
+        <div id="ring-account-info" class="row" hidden>
+          <span>Angemeldet als <strong id="ring-account-email"></strong></span>
+          <button type="button" id="btn-ring-logout" class="btn btn-ghost">Abmelden</button>
+        </div>
+
+        <div id="ring-device-picker" class="row" hidden>
+          <label>Intercom-Geraet
+            <select id="ring-device-select"></select>
+          </label>
+          <button type="button" id="btn-ring-refresh-devices" class="btn btn-secondary">Geraete laden</button>
+          <button type="button" id="btn-ring-select-device" class="btn btn-primary">Uebernehmen</button>
+          <span id="ring-device-result" class="inline-msg"></span>
+        </div>
+      </div>
     </section>
   </main>
 

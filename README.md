@@ -1,7 +1,8 @@
 # homekey-ringmqtt-bridge
 
-Ein kleines Python-Programm mit Web-Interface, das **HomeKey-ESP32** und
-**ring-mqtt** miteinander verbindet:
+Ein kleines Python-Programm mit Web-Interface, das **HomeKey-ESP32** direkt
+mit deiner **Ring-Gegensprechanlage** verbindet - als eigenstaendige
+Loesung, ohne dass zusaetzlich `ring-mqtt` laufen muss:
 
 - Jeder Tap mit einem **Apple HomeKey** (iPhone/Apple Watch) am
   HomeKey-ESP32-Leser oeffnet die Ring-Gegensprechanlage.
@@ -10,20 +11,21 @@ Ein kleines Python-Programm mit Web-Interface, das **HomeKey-ESP32** und
   loest ebenfalls das Oeffnen aus.
 - Unbekannte Tags/HomeKey-Endpoints werden ignoriert, aber protokolliert.
 
-Das Programm selbst spricht **kein** HomeKit und **keine** Ring-Cloud-API -
-es ist rein eine MQTT-Bruecke: Es liest die Tap-Events, die
-HomeKey-ESP32 sowieso schon auf MQTT veroeffentlicht, trifft die
-Zugriffsentscheidung und schickt bei Erfolg den Unlock-Befehl an das
-`lock`-Geraet, das `ring-mqtt` fuer deine Ring Intercom anlegt.
+Das Programm spricht **kein** HomeKit, benoetigt fuer HomeKey-ESP32 aber
+weiterhin **MQTT**: Es liest die Tap-Events, die HomeKey-ESP32 sowieso
+schon auf MQTT veroeffentlicht, trifft die Zugriffsentscheidung und
+oeffnet bei Erfolg die Ring Intercom **direkt ueber die Ring Cloud API**
+(Login einmalig im Web-Interface) - optional zusaetzlich den lokalen
+HomeKey-ESP32-Riegel/Relais.
 
 ## Voraussetzungen
 
-- Ein laufender MQTT-Broker (z. B. Mosquitto), an den **sowohl**
-  HomeKey-ESP32 **als auch** ring-mqtt angeschlossen sind.
+- Ein laufender MQTT-Broker (z. B. Mosquitto), an den HomeKey-ESP32
+  angeschlossen ist.
 - HomeKey-ESP32 mit aktiviertem MQTT (Web-UI &rarr; Settings &rarr; MQTT).
   Wichtig: Die Option *"Do not publish NFC Tag UID"* muss **deaktiviert**
   sein, wenn du auch normale NFC-Tags (nicht nur HomeKey) nutzen willst.
-- `ring-mqtt` mit eingerichteter Ring Intercom.
+- Ein Ring-Account mit eingerichteter Ring Intercom.
 - Python 3.10+
 
 ## Installation
@@ -60,17 +62,18 @@ Beispiel-Unit unter `nfc-intercom-bridge.service.example` bei.
    hast (Standard-Ableitung: `HK-XXXXXX` aus der MAC-Adresse). Die
    benoetigten Topics (`<id>/homekey/auth`, `<id>/homekit/set_target_state`,
    ...) werden daraus automatisch abgeleitet.
-3. **Einstellungen &rarr; Ring-Intercom**: Aktivieren und entweder das
-   Befehls-Topic manuell eintragen oder auf **"Ring-Topics automatisch
-   suchen"** klicken. Die Bridge abonniert dann kurzzeitig `ring/#`, du
-   loest in der Ring-App/-Erwartung ein Ereignis aus (z. B. einmal
-   klingeln oder in Home Assistant/ring-mqtt manuell entriegeln) und die
-   gefundenen Topics werden als Vorschlaege angezeigt. Per Klick uebernimmst
-   du das passende `.../lock/command`-Topic.
-   Payload zum Oeffnen ist bei ring-mqtt normalerweise `unlock`.
-4. **Zugangskarten &rarr; Neuen NFC-Tag anlernen**: Button klicken, Tag an
+3. **Einstellungen &rarr; Ring-Intercom**: "Ring-Intercom-Steuerung
+   aktivieren" ankreuzen und speichern.
+4. **Einstellungen &rarr; Ring-Konto**: E-Mail und Passwort deines
+   Ring-Accounts eingeben und auf "Anmelden" klicken. Fordert Ring einen
+   2FA-Code an (per E-Mail/SMS), erscheint ein zusaetzliches Feld - Code
+   eingeben und erneut auf "Anmelden" klicken. Danach auf "Geraete laden"
+   klicken, die gewuenschte Intercom aus der Liste auswaehlen und
+   "Uebernehmen" klicken. Der Login laeuft einmalig; der Zugriffstoken
+   wird danach automatisch erneuert.
+5. **Zugangskarten &rarr; Neuen NFC-Tag anlernen**: Button klicken, Tag an
    den HomeKey-ESP32-Leser halten, Namen vergeben, speichern.
-5. Fertig - ab jetzt oeffnet sowohl HomeKey als auch jeder angelernte Tag
+6. Fertig - ab jetzt oeffnet sowohl HomeKey als auch jeder angelernte Tag
    die Intercom.
 
 ### HomeKey-Taps einschraenken
@@ -95,12 +98,13 @@ HomeKey-ESP32 --MQTT--> <id>/homekey/auth --JSON--> Bridge
                                         |
                                        ja
                                         |
-                     ring-mqtt lock/command = "unlock"  (+ optional lokaler Riegel)
+                Ring Cloud API: Intercom "open door"  (+ optional lokaler Riegel)
 ```
 
 Die Bridge selbst haelt keinen eigenen NFC-Leser oder HomeKit-Server -
 sie nutzt konsequent den bereits vorhandenen HomeKey-ESP32-Leser als
-einzige Hardware.
+einzige Hardware. Fuer die Ring-Steuerung ist ausser dem einmaligen
+Konto-Login im Web-Interface keine weitere Software noetig.
 
 ## Konfigurationsdatei
 
@@ -114,8 +118,9 @@ verwaltet, kann aber auch direkt editiert werden:
 | `homekey.auth_topic` | Topic, auf dem Taps veroeffentlicht werden (`<id>/homekey/auth`) |
 | `homekey.trust_all_homekey_taps` | `true` = jeder HomeKey-Tap oeffnet, unabhaengig von der Tag-Liste |
 | `homekey.also_trigger_local_lock` | zusaetzlich `<id>/homekit/set_target_state` = `0` (UNLOCKED) publizieren |
-| `ring.command_topic` | ring-mqtt Lock-Command-Topic der Intercom |
-| `ring.unlock_payload` | Payload zum Oeffnen (Standard `unlock`) |
+| `ring.enabled` | Ring-Intercom-Steuerung aktiv |
+| `ring.email` / `ring.token` | vom Web-Interface beim Login gesetzt (Refresh-Token, kein Passwort) |
+| `ring.device_id` / `ring.device_name` | ausgewaehlte Ring-Intercom (Web-Interface &rarr; Ring-Konto) |
 | `access.cooldown_seconds` | Mindestabstand zwischen zwei Aktionen desselben Tags/HomeKey |
 
 ## Sicherheitshinweise
@@ -130,3 +135,8 @@ verwaltet, kann aber auch direkt editiert werden:
 - Die SQLite-Datenbank (`bridge.db`) enthaelt die Liste der Zugangskarten
   im Klartext (UID/Endpoint-ID + Name). Zugriff auf das Dateisystem des
   Hosts entsprechend absichern.
+- `config.json` enthaelt nach dem Ring-Login einen OAuth-Refresh-Token im
+  Klartext (kein Passwort, aber ausreichend fuer Zugriff auf dein
+  Ring-Konto). Genauso wie bei der SQLite-Datenbank: Dateisystemzugriff
+  entsprechend absichern. Ueber "Abmelden" im Web-Interface wird der
+  Token wieder geloescht.

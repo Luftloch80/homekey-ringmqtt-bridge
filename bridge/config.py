@@ -41,8 +41,13 @@ DEFAULT_CONFIG = {
     },
     "ring": {
         "enabled": False,
-        "command_topic": "",
-        "unlock_payload": "unlock",
+        # Per Web-Interface gesetzt (E-Mail/Passwort + 2FA) - Bridge spricht
+        # direkt mit der Ring Cloud API, kein ring-mqtt noetig.
+        "email": "",
+        "hardware_id": "",
+        "token": {},
+        "device_id": None,
+        "device_name": "",
     },
     "access": {
         "cooldown_seconds": 3,
@@ -119,4 +124,7 @@ class ConfigStore:
         cfg = self.get()
         if cfg["mqtt"].get("password"):
             cfg["mqtt"]["password"] = "********"
+        # Als String statt {}/dict senden, damit das Web-UI simpel auf
+        # Wahrheitswert pruefen kann (ein leeres dict ist in JS truthy).
+        cfg["ring"]["token"] = "********" if cfg["ring"].get("token") else ""
         return cfg

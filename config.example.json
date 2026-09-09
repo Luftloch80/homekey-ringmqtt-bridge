@@ -19,8 +19,11 @@
   },
   "ring": {
     "enabled": true,
-    "command_topic": "ring/XXXXXXXXXXXX/lock/YYYYYYYYYYYY/command",
-    "unlock_payload": "unlock"
+    "email": "",
+    "hardware_id": "",
+    "token": {},
+    "device_id": null,
+    "device_name": ""
   },
   "access": {
     "cooldown_seconds": 3

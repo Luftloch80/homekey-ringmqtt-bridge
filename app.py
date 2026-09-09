@@ -1,9 +1,9 @@
-"""NFC Intercom Bridge fuer HomeKey-ESP32 + ring-mqtt.
+"""NFC Intercom Bridge fuer HomeKey-ESP32 + Ring Intercom.
 
 Web-Oberflaeche + MQTT-Bruecke: laesst dich eigene NFC-Tags anlernen und
 sorgt dafuer, dass sowohl ein Apple-HomeKey-Tap als auch ein bekannter
-NFC-Tag am HomeKey-ESP32-Leser die Ring-Gegensprechanlage (ueber
-ring-mqtt) bzw. optional den lokalen Riegel oeffnet.
+NFC-Tag am HomeKey-ESP32-Leser die Ring-Gegensprechanlage (direkt ueber
+die Ring Cloud API) bzw. optional den lokalen Riegel oeffnet.
 
 Start:
     python app.py [--config config.json] [--db bridge.db]
@@ -22,6 +22,7 @@ from flask import Flask, Response, jsonify, request, send_from_directory
 from bridge import events
 from bridge.config import ConfigStore
 from bridge.mqtt_bridge import Bridge
+from bridge.ring_client import AuthenticationError, Requires2FAError, RingClient
 from bridge.store import Store
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
@@ -33,14 +34,16 @@ app = Flask(__name__, static_folder="static", template_folder="templates")
 
 config_store: ConfigStore
 store: Store
+ring_client: RingClient
 bridge: Bridge
 
 
 def create_app(config_path: str, db_path: str) -> Flask:
-    global config_store, store, bridge
+    global config_store, store, ring_client, bridge
     config_store = ConfigStore(config_path)
     store = Store(db_path)
-    bridge = Bridge(config_store, store)
+    ring_client = RingClient(config_store)
+    bridge = Bridge(config_store, store, ring_client)
     return app
 
 
@@ -88,10 +91,13 @@ def api_get_config():
 @app.post("/api/config")
 def api_update_config():
     patch = request.get_json(force=True, silent=True) or {}
-    # Never let the redacted placeholder overwrite the real password.
+    # Never let the redacted placeholder overwrite the real password/token.
     mqtt_patch = patch.get("mqtt") or {}
     if mqtt_patch.get("password") == "********":
         mqtt_patch.pop("password")
+    ring_patch = patch.get("ring") or {}
+    if ring_patch.get("token") == "********":
+        ring_patch.pop("token")
     cfg = config_store.update(patch)
     bridge.reload()
     redacted = config_store.redacted()
@@ -160,17 +166,51 @@ def api_learn_status():
     return jsonify(bridge.learn_status())
 
 
-# -- ring topic discovery -------------------------------------------------
-@app.post("/api/discover/ring/start")
-def api_discover_ring_start():
+# -- Ring-Login (ersetzt ring-mqtt) ----------------------------------------
+@app.post("/api/ring/login")
+def api_ring_login():
     body = request.get_json(force=True, silent=True) or {}
-    bridge.start_ring_discovery(duration=float(body.get("duration", 15)))
-    return jsonify({"ok": True})
+    email = (body.get("email") or "").strip()
+    password = body.get("password") or ""
+    otp_code = (body.get("otp_code") or "").strip() or None
+    if not email or not password:
+        return jsonify({"error": "E-Mail und Passwort erforderlich"}), 400
+    try:
+        ring_client.login(email, password, otp_code)
+    except Requires2FAError:
+        return jsonify({"needs_2fa": True})
+    except AuthenticationError as exc:
+        return jsonify({"error": f"Anmeldung fehlgeschlagen: {exc}"}), 400
+    except Exception as exc:  # Netzwerkfehler o.ae.
+        log.exception("Ring-Login fehlgeschlagen")
+        return jsonify({"error": str(exc)}), 400
+    return jsonify({"ok": True, "config": config_store.redacted()})
 
 
-@app.get("/api/discover/ring/status")
-def api_discover_ring_status():
-    return jsonify(bridge.ring_discovery_status())
+@app.post("/api/ring/logout")
+def api_ring_logout():
+    ring_client.logout()
+    return jsonify({"ok": True, "config": config_store.redacted()})
+
+
+@app.get("/api/ring/devices")
+def api_ring_devices():
+    try:
+        devices = ring_client.list_intercoms()
+    except Exception as exc:
+        return jsonify({"error": str(exc)}), 400
+    return jsonify(devices)
+
+
+@app.post("/api/ring/select-device")
+def api_ring_select_device():
+    body = request.get_json(force=True, silent=True) or {}
+    device_id = body.get("device_id")
+    device_name = body.get("device_name") or ""
+    if device_id is None:
+        return jsonify({"error": "device_id fehlt"}), 400
+    config_store.update({"ring": {"device_id": device_id, "device_name": device_name}})
+    return jsonify({"ok": True, "config": config_store.redacted()})
 
 
 # -- log ---------------------------------------------------------------
