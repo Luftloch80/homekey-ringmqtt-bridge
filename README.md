@@ -125,6 +125,12 @@ zurueckkommt), ignoriert die Bridge Meldungen, die innerhalb von 10
 Sekunden nach einem eigenen Entsperr-Befehl eintreffen. Genau wie bei
 Taps gilt zusaetzlich die konfigurierte Cooldown-Zeit.
 
+Der HomeKey-ESP32-Riegel ist als Tueroeffner-Impuls gedacht, kein
+Dauerzustand: Immer wenn die Bridge selbst `also_trigger_local_lock`
+ausloest (per Tap oder ueber "Tuer jetzt oeffnen"), setzt sie den
+HomeKit-Riegel automatisch nach 3 Sekunden wieder auf "verriegelt"
+zurueck, damit die Home-App nicht dauerhaft "entsperrt" anzeigt.
+
 ## Konfigurationsdatei
 
 `config.json` (siehe `config.example.json`) wird ueber das Web-Interface
