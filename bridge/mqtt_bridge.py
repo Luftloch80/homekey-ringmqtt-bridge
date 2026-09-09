@@ -26,6 +26,11 @@ log = logging.getLogger("bridge.mqtt")
 # eigenstaendiges manuelles Entsperren in der Home-App).
 LOCAL_LOCK_ECHO_WINDOW = 10.0
 
+# Der HomeKey-ESP32-Riegel ist ein Tueroeffner-Impuls, kein Dauerzustand -
+# nach dieser Zeit meldet die Bridge den HomeKit-Riegel wieder als
+# "verriegelt", damit die Home-App nicht dauerhaft "entsperrt" anzeigt.
+LOCAL_LOCK_RELOCK_DELAY = 3.0
+
 
 class Bridge:
     def __init__(self, config: ConfigStore, store: Store, ring_client: RingClient):
@@ -266,6 +271,13 @@ class Bridge:
             },
         )
 
+    def _schedule_relock(self, lock_target_state_topic: str):
+        def _relock():
+            # 1 == LockManager::LOCKED in HomeKey-ESP32
+            self.publish(lock_target_state_topic, "1")
+
+        threading.Timer(LOCAL_LOCK_RELOCK_DELAY, _relock).start()
+
     def _trigger_open(self) -> str:
         cfg = self.config.get()
         actions = []
@@ -282,6 +294,7 @@ class Bridge:
                 self._last_local_lock_publish_ts = time.time()
             if self.publish(cfg["homekey"]["lock_target_state_topic"], "0"):
                 actions.append("homekey-esp32-lock")
+                self._schedule_relock(cfg["homekey"]["lock_target_state_topic"])
             else:
                 actions.append("homekey-esp32-lock(fehlgeschlagen)")
 
