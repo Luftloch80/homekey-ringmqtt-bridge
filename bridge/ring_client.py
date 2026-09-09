@@ -98,7 +98,7 @@ class RingClient:
         if ring is None:
             raise RuntimeError("Ring ist nicht angemeldet.")
         self._run(ring.async_update_devices())
-        return [{"id": dev.id, "name": dev.name} for dev in ring.devices().intercoms]
+        return [{"id": dev.id, "name": dev.name} for dev in ring.devices().other]
 
     # -- Tuer oeffnen -------------------------------------------------------
     def open_door(self) -> bool:
