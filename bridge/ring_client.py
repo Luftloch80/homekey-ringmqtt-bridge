@@ -12,8 +12,16 @@ import asyncio
 import logging
 import threading
 import uuid
+from typing import Callable
 
-from ring_doorbell import Auth, AuthenticationError, Requires2FAError, Ring
+from ring_doorbell import (
+    Auth,
+    AuthenticationError,
+    Requires2FAError,
+    Ring,
+    RingEvent,
+    RingEventListener,
+)
 
 from .config import ConfigStore
 
@@ -30,6 +38,9 @@ class RingClient:
         self._auth: Auth | None = None
         self._ring: Ring | None = None
         self._lock = threading.RLock()
+
+        self._listener: RingEventListener | None = None
+        self._on_ding: Callable[[str], None] | None = None
 
         self._loop = asyncio.new_event_loop()
         self._thread = threading.Thread(target=self._loop.run_forever, daemon=True)
@@ -69,6 +80,7 @@ class RingClient:
         Wirft ``Requires2FAError``, wenn noch ein 2FA-Code eingegeben werden
         muss, oder ``AuthenticationError`` bei falschen Zugangsdaten.
         """
+        self.stop_ding_listener()
         auth = Auth(USER_AGENT, None, self._save_token, hardware_id=self._hardware_id())
         self._run(auth.async_fetch_token(email, password, otp_code))
         ring = Ring(auth)
@@ -81,11 +93,20 @@ class RingClient:
         self.config.update({"ring": {"email": email}})
 
     def logout(self):
+        self.stop_ding_listener()
         with self._lock:
             self._auth = None
             self._ring = None
         self.config.update(
-            {"ring": {"token": {}, "email": "", "device_id": None, "device_name": ""}}
+            {
+                "ring": {
+                    "token": {},
+                    "email": "",
+                    "device_id": None,
+                    "device_name": "",
+                    "fcm_credentials": {},
+                }
+            }
         )
 
     def is_authenticated(self) -> bool:
@@ -118,26 +139,59 @@ class RingClient:
             log.exception("Ring-Akkustand konnte nicht abgerufen werden")
             return None
 
-    def list_active_dings(self) -> list[dict]:
-        """Aktuell aktive Klingel-Ereignisse (Ring nennt das "Ding") am
-        ausgewaehlten Intercom - z.B. jemand hat gerade am Ring-Geraet
-        geklingelt. Ein Ding bleibt laut Ring-API einige Minuten "aktiv"."""
+    # -- Ring-Klingel-Ereignisse ("Dings") - dauerhaftes Push-Listening --------
+    def _save_fcm_credentials(self, creds: dict):
+        self.config.update({"ring": {"fcm_credentials": creds}})
+
+    def _on_ring_event(self, event: RingEvent):
+        if event.is_update or event.kind != "ding":
+            return
         cfg = self.config.get()
         device_id = cfg["ring"].get("device_id")
+        if not device_id or event.doorbot_id != int(device_id):
+            return
+        if self._on_ding:
+            self._on_ding(event.device_name)
+
+    def start_ding_listener(self, on_ding: Callable[[str], None]):
+        """Registriert sich einmalig bei Ring fuer Push-Benachrichtigungen
+        (Firebase Cloud Messaging) und haelt die Verbindung dauerhaft offen -
+        kein Polling. Ein neues Ding kommt so quasi in Echtzeit an."""
+        cfg = self.config.get()
+        if not (cfg["ring"].get("enabled") and cfg["ring"].get("device_id")):
+            return
         with self._lock:
             ring = self._ring
-        if ring is None or not device_id:
-            return []
+            if ring is None or self._listener is not None:
+                return
+            self._on_ding = on_ding
+            fcm_credentials = cfg["ring"].get("fcm_credentials") or None
+            listener = RingEventListener(
+                ring, fcm_credentials, self._save_fcm_credentials
+            )
+            listener.add_notification_callback(self._on_ring_event)
+            try:
+                started = self._run(listener.start(), timeout=15.0)
+            except Exception:
+                log.exception("Ring-Klingel-Listener konnte nicht gestartet werden")
+                return
+            if not started:
+                log.warning("Ring-Klingel-Listener konnte sich nicht bei Ring registrieren")
+                return
+            self._listener = listener
+            log.info("Ring-Klingel-Listener gestartet (dauerhaftes Push-Listening)")
+
+    def stop_ding_listener(self):
+        with self._lock:
+            listener = self._listener
+            self._listener = None
+            self._on_ding = None
+        if listener is None:
+            return
         try:
-            self._run(ring.async_update_dings())
-            return [
-                {"id": event.id, "kind": event.kind, "now": event.now, "expires_in": event.expires_in}
-                for event in ring.active_alerts()
-                if event.doorbot_id == int(device_id) and event.kind == "ding"
-            ]
+            self._run(listener.stop())
         except Exception:
-            log.exception("Ring-Klingel-Ereignisse konnten nicht abgerufen werden")
-            return []
+            log.exception("Ring-Klingel-Listener konnte nicht sauber gestoppt werden")
 
     # -- Tuer oeffnen -------------------------------------------------------
     def open_door(self) -> bool:

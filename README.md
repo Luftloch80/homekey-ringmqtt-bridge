@@ -127,12 +127,16 @@ Ausloeser.
 
 ### Ring-Klingel-Ereignisse ("Dings")
 
-Solange Ring aktiviert und ein Geraet ausgewaehlt ist, fragt die Bridge
-alle 5 Sekunden bei Ring nach, ob gerade am Intercom geklingelt wurde
-(Ring nennt ein solches Ereignis "Ding", es bleibt dort einige Minuten
-als "aktiv" markiert). Ein neu erkanntes Klingeln erscheint sofort im
-Live-Feed auf dem Dashboard - unabhaengig davon, ob dabei auch entsperrt
-wurde.
+Solange Ring aktiviert und ein Geraet ausgewaehlt ist, registriert sich
+die Bridge einmalig bei Ring fuer Push-Benachrichtigungen (dasselbe
+Firebase-Cloud-Messaging, das auch die Ring-App nutzt) und haelt diese
+Verbindung dauerhaft offen - es wird **nicht** periodisch nachgefragt
+(kein Polling). Klingelt es am Intercom (Ring nennt das ein "Ding"),
+erscheint das Ereignis nahezu in Echtzeit im Live-Feed auf dem
+Dashboard - unabhaengig davon, ob dabei auch entsperrt wurde. Die
+Push-Registrierung wird in `ring.fcm_credentials` gespeichert, damit
+sich die Bridge nach einem Neustart nicht erneut bei Ring registrieren
+muss.
 
 ## Konfigurationsdatei
 
@@ -148,6 +152,7 @@ verwaltet, kann aber auch direkt editiert werden:
 | `homekey.lock_state_topic` | wird abonniert (`<id>/homekit/state`) - manuelles Entsperren in der Home-App oeffnet zusaetzlich die Ring-Intercom |
 | `ring.enabled` | Ring-Intercom-Steuerung aktiv |
 | `ring.email` / `ring.token` | vom Web-Interface beim Login gesetzt (Refresh-Token, kein Passwort) |
+| `ring.fcm_credentials` | Push-Registrierung fuer das dauerhafte Ding-Listening (wird automatisch verwaltet) |
 | `ring.device_id` / `ring.device_name` | ausgewaehlte Ring-Intercom (Web-Interface &rarr; Ring-Konto) |
 | `access.cooldown_seconds` | Mindestabstand zwischen zwei Aktionen desselben Tags/HomeKey |
 
