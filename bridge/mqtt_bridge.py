@@ -20,6 +20,11 @@ from .store import Store
 
 log = logging.getLogger("bridge.mqtt")
 
+# Wie oft die Bridge bei Ring nach aktiven Klingel-Ereignissen ("Dings")
+# fragt. Ring haelt ein Ding einige Minuten "aktiv", daher reicht ein
+# kurzes Polling-Intervall fuer eine gefuehlt sofortige Anzeige.
+DING_POLL_INTERVAL = 5.0
+
 
 class Bridge:
     def __init__(self, config: ConfigStore, store: Store, ring_client: RingClient):
@@ -29,9 +34,11 @@ class Bridge:
         self.client: mqtt.Client | None = None
         self._connected = False
         self._last_grant: dict[str, float] = {}
+        self._seen_dings: set[int] = set()
         self._lock = threading.RLock()
 
         self._connect_client()
+        self._start_ding_poller()
 
     # -- connection handling ------------------------------------------------
     def _connect_client(self):
@@ -252,6 +259,37 @@ class Bridge:
                 "action": action,
             },
         )
+
+    # -- Ring-Klingel-Ereignisse ("Dings") -----------------------------------
+    def _start_ding_poller(self):
+        def _poll_loop():
+            while True:
+                time.sleep(DING_POLL_INTERVAL)
+                try:
+                    self._poll_dings()
+                except Exception:
+                    log.exception("Fehler beim Abfragen der Ring-Klingel-Ereignisse")
+
+        threading.Thread(target=_poll_loop, daemon=True).start()
+
+    def _poll_dings(self):
+        cfg = self.config.get()
+        if not (cfg["ring"].get("enabled") and cfg["ring"].get("device_id")):
+            return
+        for ding in self.ring_client.list_active_dings():
+            with self._lock:
+                if ding["id"] in self._seen_dings:
+                    continue
+                self._seen_dings.add(ding["id"])
+                # Verhindert unbegrenztes Wachstum - Ding-IDs sind fortlaufend,
+                # die aeltesten fallen zuerst wieder raus.
+                if len(self._seen_dings) > 200:
+                    self._seen_dings = set(sorted(self._seen_dings)[-100:])
+            self._announce_ding()
+
+    def _announce_ding(self):
+        log.info("Ring-Intercom: Klingeln erkannt")
+        events.publish("ding", {"name": "Ring-Intercom"})
 
     def _trigger_open(self) -> str:
         cfg = self.config.get()

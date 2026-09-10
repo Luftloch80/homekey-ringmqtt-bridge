@@ -118,6 +118,27 @@ class RingClient:
             log.exception("Ring-Akkustand konnte nicht abgerufen werden")
             return None
 
+    def list_active_dings(self) -> list[dict]:
+        """Aktuell aktive Klingel-Ereignisse (Ring nennt das "Ding") am
+        ausgewaehlten Intercom - z.B. jemand hat gerade am Ring-Geraet
+        geklingelt. Ein Ding bleibt laut Ring-API einige Minuten "aktiv"."""
+        cfg = self.config.get()
+        device_id = cfg["ring"].get("device_id")
+        with self._lock:
+            ring = self._ring
+        if ring is None or not device_id:
+            return []
+        try:
+            self._run(ring.async_update_dings())
+            return [
+                {"id": event.id, "kind": event.kind, "now": event.now, "expires_in": event.expires_in}
+                for event in ring.active_alerts()
+                if event.doorbot_id == int(device_id) and event.kind == "ding"
+            ]
+        except Exception:
+            log.exception("Ring-Klingel-Ereignisse konnten nicht abgerufen werden")
+            return []
+
     # -- Tuer oeffnen -------------------------------------------------------
     def open_door(self) -> bool:
         cfg = self.config.get()

@@ -125,6 +125,15 @@ vorausgesetzt, Ring ist aktiviert und ein Geraet ausgewaehlt. Genau wie
 bei Taps gilt dabei die konfigurierte Cooldown-Zeit gegen wiederholte
 Ausloeser.
 
+### Ring-Klingel-Ereignisse ("Dings")
+
+Solange Ring aktiviert und ein Geraet ausgewaehlt ist, fragt die Bridge
+alle 5 Sekunden bei Ring nach, ob gerade am Intercom geklingelt wurde
+(Ring nennt ein solches Ereignis "Ding", es bleibt dort einige Minuten
+als "aktiv" markiert). Ein neu erkanntes Klingeln erscheint sofort im
+Live-Feed auf dem Dashboard - unabhaengig davon, ob dabei auch entsperrt
+wurde.
+
 ## Konfigurationsdatei
 
 `config.json` (siehe `config.example.json`) wird ueber das Web-Interface
