@@ -135,6 +135,8 @@ function connectEvents() {
       loadLog();
     } else if (msg.type === "learn_captured") {
       onLearnCaptured(msg.data);
+    } else if (msg.type === "ding") {
+      addFeedItem(`${fmtTime(Date.now() / 1000)} - Geklingelt: ${msg.data.name}`);
     }
   };
   es.onerror = () => {
