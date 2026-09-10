@@ -12,6 +12,7 @@
     "device_id": "HK-AABBCC",
     "auth_topic": "",
     "lock_state_topic": "",
+    "lock_target_state_topic": "",
     "availability_topic": "",
     "trust_all_homekey_taps": true
   },
