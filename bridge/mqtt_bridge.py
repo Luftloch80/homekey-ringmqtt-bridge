@@ -20,6 +20,13 @@ from .store import Store
 
 log = logging.getLogger("bridge.mqtt")
 
+# Der HomeKit-Riegel von HomeKey-ESP32 zeigt nach einem Oeffnen (per Tap
+# oder manuell in der Home-App) sonst dauerhaft "entsperrt" an, da Ring
+# das eigentliche physische Oeffnen uebernimmt und dem Riegel nie
+# zurueckmeldet, dass wieder verriegelt ist. Die Bridge meldet den
+# HomeKit-Zustand daher nach dieser Zeit selbst wieder als "verriegelt".
+RELOCK_DELAY_SECONDS = 3.0
+
 
 class Bridge:
     def __init__(self, config: ConfigStore, store: Store, ring_client: RingClient):
@@ -239,6 +246,8 @@ class Bridge:
                 return
             self._last_grant[key] = now
 
+        self._schedule_relock(cfg["homekey"].get("lock_target_state_topic"))
+
         ok = self.ring_client.open_door()
         action = "ring-intercom" if ok else "ring-intercom(fehlgeschlagen)"
         log.info("Manuell in der Home-App entsperrt - Ring-Intercom %s", "geoeffnet" if ok else "Oeffnen fehlgeschlagen")
@@ -267,10 +276,34 @@ class Bridge:
         log.info("Ring-Intercom: Klingeln erkannt (%s)", device_name)
         events.publish("ding", {"name": device_name or "Ring-Intercom"})
 
+    def _schedule_relock(self, lock_target_state_topic: str | None):
+        """Meldet den HomeKit-Riegel von HomeKey-ESP32 nach RELOCK_DELAY_SECONDS
+        wieder als "verriegelt" zurueck. Ring oeffnet die Tuer physisch - ohne
+        dieses Echo bliebe der in HomeKit angezeigte Zustand nach jedem
+        Oeffnen dauerhaft auf "entsperrt" stehen."""
+        if not lock_target_state_topic:
+            return
+
+        def _relock():
+            # 1 == LockManager::LOCKED in HomeKey-ESP32
+            self.publish(lock_target_state_topic, "1")
+
+        threading.Timer(RELOCK_DELAY_SECONDS, _relock).start()
+
+    def publish(self, topic: str, payload: str) -> bool:
+        if not self.client or not self._connected:
+            log.error("Kann nicht publizieren, MQTT nicht verbunden (topic=%s)", topic)
+            return False
+        self.client.publish(topic, payload, qos=1, retain=False)
+        log.info("MQTT publish -> %s: %s", topic, payload)
+        return True
+
     def _trigger_open(self) -> str:
         cfg = self.config.get()
         if cfg["ring"].get("enabled") and cfg["ring"].get("device_id"):
-            if self.ring_client.open_door():
+            ok = self.ring_client.open_door()
+            self._schedule_relock(cfg["homekey"].get("lock_target_state_topic"))
+            if ok:
                 return "ring-intercom"
             return "ring-intercom(fehlgeschlagen)"
         log.warning("Zugriff gewaehrt, aber Ring-Intercom nicht konfiguriert.")

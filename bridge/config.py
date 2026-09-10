@@ -28,6 +28,7 @@ DEFAULT_CONFIG = {
         # der Firmware andere Topic-Suffixe konfiguriert wurden.
         "auth_topic": "",
         "lock_state_topic": "",
+        "lock_target_state_topic": "",
         "availability_topic": "",
         # Jeder gueltige HomeKey-Tap (vom iPhone/Apple Watch) oeffnet die
         # Tuer, ohne dass die Endpoint-ID in der Tag-Liste stehen muss -
@@ -111,6 +112,8 @@ class ConfigStore:
             hk["auth_topic"] = f"{device_id}/homekey/auth"
         if not hk.get("lock_state_topic"):
             hk["lock_state_topic"] = f"{device_id}/homekit/state"
+        if not hk.get("lock_target_state_topic"):
+            hk["lock_target_state_topic"] = f"{device_id}/homekit/set_target_state"
         if not hk.get("availability_topic"):
             hk["availability_topic"] = f"{device_id}/status"
 

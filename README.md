@@ -125,6 +125,12 @@ vorausgesetzt, Ring ist aktiviert und ein Geraet ausgewaehlt. Genau wie
 bei Taps gilt dabei die konfigurierte Cooldown-Zeit gegen wiederholte
 Ausloeser.
 
+Da Ring die Tuer physisch oeffnet, der HomeKit-Riegel von HomeKey-ESP32
+davon aber nichts weiss, meldet die Bridge 3 Sekunden spaeter selbst
+`<id>/homekit/set_target_state` = `1` zurueck - der Riegel zeigt in der
+Home-App danach wieder "verriegelt" statt dauerhaft "entsperrt". Das gilt
+sowohl fuer Taps als auch fuer das manuelle Entsperren in der Home-App.
+
 ### Ring-Klingel-Ereignisse ("Dings")
 
 Solange Ring aktiviert und ein Geraet ausgewaehlt ist, registriert sich
@@ -150,6 +156,7 @@ verwaltet, kann aber auch direkt editiert werden:
 | `homekey.auth_topic` | Topic, auf dem Taps veroeffentlicht werden (`<id>/homekey/auth`) |
 | `homekey.trust_all_homekey_taps` | `true` = jeder HomeKey-Tap oeffnet, unabhaengig von der Tag-Liste |
 | `homekey.lock_state_topic` | wird abonniert (`<id>/homekit/state`) - manuelles Entsperren in der Home-App oeffnet zusaetzlich die Ring-Intercom |
+| `homekey.lock_target_state_topic` | wird 3s nach jedem Oeffnen mit `1` (verriegelt) beschrieben, damit der HomeKit-Riegel nicht dauerhaft "entsperrt" anzeigt |
 | `ring.enabled` | Ring-Intercom-Steuerung aktiv |
 | `ring.email` / `ring.token` | vom Web-Interface beim Login gesetzt (Refresh-Token, kein Passwort) |
 | `ring.fcm_credentials` | Push-Registrierung fuer das dauerhafte Ding-Listening (wird automatisch verwaltet) |
