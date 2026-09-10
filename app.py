@@ -184,6 +184,7 @@ def api_ring_login():
     except Exception as exc:  # Netzwerkfehler o.ae.
         log.exception("Ring-Login fehlgeschlagen")
         return jsonify({"error": str(exc)}), 400
+    bridge.ensure_ding_listener()
     return jsonify({"ok": True, "config": config_store.redacted()})
 
 
@@ -210,6 +211,7 @@ def api_ring_select_device():
     if device_id is None:
         return jsonify({"error": "device_id fehlt"}), 400
     config_store.update({"ring": {"device_id": device_id, "device_name": device_name}})
+    bridge.ensure_ding_listener()
     return jsonify({"ok": True, "config": config_store.redacted()})
 
 

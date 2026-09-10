@@ -44,6 +44,9 @@ DEFAULT_CONFIG = {
         "token": {},
         "device_id": None,
         "device_name": "",
+        # FCM-Registrierung fuer das dauerhafte Push-Listening auf
+        # Klingel-Ereignisse (Dings) - kein Polling, siehe ring_client.py.
+        "fcm_credentials": {},
     },
     "access": {
         "cooldown_seconds": 3,
@@ -124,4 +127,5 @@ class ConfigStore:
         # Als String statt {}/dict senden, damit das Web-UI simpel auf
         # Wahrheitswert pruefen kann (ein leeres dict ist in JS truthy).
         cfg["ring"]["token"] = "********" if cfg["ring"].get("token") else ""
+        cfg["ring"]["fcm_credentials"] = "********" if cfg["ring"].get("fcm_credentials") else ""
         return cfg
