@@ -144,6 +144,16 @@ Push-Registrierung wird in `ring.fcm_credentials` gespeichert, damit
 sich die Bridge nach einem Neustart nicht erneut bei Ring registrieren
 muss.
 
+### HomeKey-ESP32-Erreichbarkeit
+
+Die Sidebar zeigt neben MQTT- und Ring-Status auch an, ob HomeKey-ESP32
+selbst gerade erreichbar ist. Die Firmware veroeffentlicht dafuer beim
+Verbindungsaufbau retained "online" auf `<id>/status` und hinterlegt
+"offline" als Last-Will-Nachricht beim Broker, die automatisch
+veroeffentlicht wird, sobald die Verbindung abreisst (z. B. Stromausfall,
+WLAN-Problem). Die Bridge abonniert dieses Topic und zeigt den Zustand
+sofort an ("unbekannt", solange noch keine Meldung eingetroffen ist).
+
 ## Konfigurationsdatei
 
 `config.json` (siehe `config.example.json`) wird ueber das Web-Interface
@@ -157,6 +167,7 @@ verwaltet, kann aber auch direkt editiert werden:
 | `homekey.trust_all_homekey_taps` | `true` = jeder HomeKey-Tap oeffnet, unabhaengig von der Tag-Liste |
 | `homekey.lock_state_topic` | wird abonniert (`<id>/homekit/state`) - manuelles Entsperren in der Home-App oeffnet zusaetzlich die Ring-Intercom |
 | `homekey.lock_target_state_topic` | wird 3s nach jedem Oeffnen mit `1` (verriegelt) beschrieben, damit der HomeKit-Riegel nicht dauerhaft "entsperrt" anzeigt |
+| `homekey.availability_topic` | wird abonniert (`<id>/status`, "online"/"offline") - zeigt die Erreichbarkeit von HomeKey-ESP32 in der Sidebar an |
 | `ring.enabled` | Ring-Intercom-Steuerung aktiv |
 | `ring.email` / `ring.token` | vom Web-Interface beim Login gesetzt (Refresh-Token, kein Passwort) |
 | `ring.fcm_credentials` | Push-Registrierung fuer das dauerhafte Ding-Listening (wird automatisch verwaltet) |
