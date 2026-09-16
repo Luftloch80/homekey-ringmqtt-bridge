@@ -58,6 +58,7 @@ def api_status():
     return jsonify(
         {
             "mqtt_connected": bridge.is_connected(),
+            "esp_online": bridge.esp_status(),
             "config": config_store.redacted(),
         }
     )

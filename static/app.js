@@ -74,6 +74,18 @@ function setMqttStatus(connected) {
   text.textContent = "MQTT: " + (connected ? "verbunden" : "getrennt");
 }
 
+function setEspStatus(online) {
+  const dot = $("#esp-dot");
+  const text = $("#esp-text");
+  if (online === null || online === undefined) {
+    dot.className = "dot dot-unknown";
+    text.textContent = "HomeKey-ESP32: unbekannt";
+    return;
+  }
+  dot.className = "dot " + (online ? "dot-ok" : "dot-bad");
+  text.textContent = "HomeKey-ESP32: " + (online ? "erreichbar" : "nicht erreichbar");
+}
+
 function setRingAccountStatus(authenticated) {
   const dot = $("#ring-account-dot");
   const text = $("#ring-account-text");
@@ -106,6 +118,7 @@ async function loadRingBattery() {
 async function loadStatus() {
   const status = await api("/api/status");
   setMqttStatus(status.mqtt_connected);
+  setEspStatus(status.esp_online);
   fillSettingsForm(status.config);
   renderRingAccount(status.config.ring);
 }
@@ -124,6 +137,8 @@ function connectEvents() {
     const msg = JSON.parse(ev.data);
     if (msg.type === "mqtt_status") {
       setMqttStatus(msg.data.connected);
+    } else if (msg.type === "esp_status") {
+      setEspStatus(msg.data.online);
     } else if (msg.type === "tap") {
       const d = msg.data;
       addFeedItem(`${fmtTime(Date.now() / 1000)} - Tap: ${d.kind} ${d.identifier}`);

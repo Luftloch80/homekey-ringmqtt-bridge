@@ -35,6 +35,7 @@ class Bridge:
         self.ring_client = ring_client
         self.client: mqtt.Client | None = None
         self._connected = False
+        self._esp_online: bool | None = None
         self._last_grant: dict[str, float] = {}
         self._lock = threading.RLock()
 
@@ -83,6 +84,7 @@ class Bridge:
                     pass
                 self.client = None
             self._connected = False
+            self._esp_online = None
             self._connect_client()
         self.ensure_ding_listener()
 
@@ -113,6 +115,11 @@ class Bridge:
             client.subscribe(lock_state_topic, qos=0)
             log.info("Abonniert: %s", lock_state_topic)
 
+        availability_topic = cfg["homekey"].get("availability_topic")
+        if availability_topic:
+            client.subscribe(availability_topic, qos=0)
+            log.info("Abonniert: %s", availability_topic)
+
     def _on_disconnect(self, client, userdata, rc):
         self._connected = False
         events.publish("mqtt_status", {"connected": False})
@@ -125,8 +132,24 @@ class Bridge:
                 self._handle_auth_message(msg.payload)
             elif msg.topic == cfg["homekey"].get("lock_state_topic"):
                 self._handle_lock_state_message(msg.payload)
+            elif msg.topic == cfg["homekey"].get("availability_topic"):
+                self._handle_availability_message(msg.payload)
         except Exception:
             log.exception("Fehler bei der Verarbeitung einer MQTT-Nachricht")
+
+    # -- HomeKey-ESP32 Erreichbarkeit ("online"/"offline" LWT) ---------------
+    def _handle_availability_message(self, raw_payload: bytes):
+        value = raw_payload.decode("utf-8", errors="replace").strip().lower()
+        online = value == "online"
+        with self._lock:
+            self._esp_online = online
+        log.info("HomeKey-ESP32 ist %s", "erreichbar" if online else "nicht erreichbar")
+        events.publish("esp_status", {"online": online})
+
+    def esp_status(self) -> bool | None:
+        """None = noch keine Meldung erhalten (Status unbekannt)."""
+        with self._lock:
+            return self._esp_online
 
     # -- HomeKey-ESP32 tap handling --------------------------------------
     def _handle_auth_message(self, raw_payload: bytes):
