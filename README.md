@@ -154,6 +154,35 @@ veroeffentlicht wird, sobald die Verbindung abreisst (z. B. Stromausfall,
 WLAN-Problem). Die Bridge abonniert dieses Topic und zeigt den Zustand
 sofort an ("unbekannt", solange noch keine Meldung eingetroffen ist).
 
+### Klingel-Erkennung einer zusätzlichen Gegensprechanlage (z. B. Siedle)
+
+Hast du neben/statt Ring noch eine unabhängige Gegensprechanlage (z. B.
+Siedle) und möchtest nur erkennen, *dass* dort geklingelt wurde (nicht
+die Tür öffnen), kannst du das in **Einstellungen → Türklingel**
+aktivieren. Die Bridge selbst hat dafür keine eigene Hardware - du
+brauchst ein zusätzliches, kleines Gerät, das das Klingelsignal
+elektrisch abgreift und per MQTT meldet, z. B.:
+
+- Ein günstiges ESP8266/ESP32-Board mit [ESPHome](https://esphome.io/)
+  (reine YAML-Konfiguration, kein eigener Code noetig) als
+  `binary_sensor` mit MQTT-Anbindung.
+- Als Abgriffpunkt eignet sich bei vielen Innenstationen ein vorhandener
+  Zusatzwecker-/Zusatzgong-Ausgang (potentialfreier Kontakt oder
+  Signalspannung, die beim Klingeln anliegt) - galvanisch getrennt z. B.
+  über einen Optokoppler an ein GPIO. Welche Klemmen das bei deinem
+  Siedle-Modell genau sind, entnimmst du der Anleitung/dem Schaltplan
+  deiner Innenstation (Typenschild beachten, es gibt mehrere
+  Siedle-Systemgenerationen mit unterschiedlicher Klemmenbelegung).
+  Alternativ funktioniert auch ein einfacher Vibrations- oder
+  Schallsensor direkt am Gehäuse der Innenstation, falls kein
+  elektrischer Abgriffpunkt verfügbar ist - dafür ist kein Eingriff in
+  die Verkabelung nötig.
+
+Sobald dieses Gerät auf dem konfigurierten Topic den konfigurierten
+Payload-Wert (Standard: `ON`, wie ihn ein ESPHome-`binary_sensor`
+published) sendet, erscheint das Klingeln sofort im Live-Feed auf dem
+Dashboard - mit demselben Mechanismus wie die Ring-Klingel-Ereignisse.
+
 ## Konfigurationsdatei
 
 `config.json` (siehe `config.example.json`) wird ueber das Web-Interface
@@ -172,6 +201,10 @@ verwaltet, kann aber auch direkt editiert werden:
 | `ring.email` / `ring.token` | vom Web-Interface beim Login gesetzt (Refresh-Token, kein Passwort) |
 | `ring.fcm_credentials` | Push-Registrierung fuer das dauerhafte Ding-Listening (wird automatisch verwaltet) |
 | `ring.device_id` / `ring.device_name` | ausgewaehlte Ring-Intercom (Web-Interface &rarr; Ring-Konto) |
+| `doorbell.enabled` | Klingel-Erkennung einer zusaetzlichen Gegensprechanlage aktiv |
+| `doorbell.topic` | MQTT-Topic, auf dem das Satelliten-Geraet (z. B. ESPHome) das Klingeln meldet |
+| `doorbell.payload_on` | erwarteter Payload-Wert bei Klingeln (Standard `ON`) |
+| `doorbell.name` | Anzeigename im Live-Feed (z. B. "Siedle") |
 | `access.cooldown_seconds` | Mindestabstand zwischen zwei Aktionen desselben Tags/HomeKey |
 
 ## Sicherheitshinweise

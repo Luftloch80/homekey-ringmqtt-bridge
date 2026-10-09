@@ -49,6 +49,17 @@ DEFAULT_CONFIG = {
         # Klingel-Ereignisse (Dings) - kein Polling, siehe ring_client.py.
         "fcm_credentials": {},
     },
+    "doorbell": {
+        # Generische Klingel-Erkennung fuer eine zusaetzliche, von
+        # HomeKey-ESP32/Ring unabhaengige Gegensprechanlage (z.B. Siedle) -
+        # ein beliebiges Geraet/Sensor (etwa ein per ESPHome angebundener
+        # Opto-/Relais-Abgriff am Klingelsignal) published auf "topic",
+        # die Bridge zeigt jede Nachricht mit payload_on im Live-Feed an.
+        "enabled": False,
+        "topic": "",
+        "payload_on": "ON",
+        "name": "Türklingel",
+    },
     "access": {
         "cooldown_seconds": 3,
     },

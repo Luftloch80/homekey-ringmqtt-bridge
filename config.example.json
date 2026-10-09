@@ -25,6 +25,12 @@
     "device_name": "",
     "fcm_credentials": {}
   },
+  "doorbell": {
+    "enabled": false,
+    "topic": "",
+    "payload_on": "ON",
+    "name": "Türklingel"
+  },
   "access": {
     "cooldown_seconds": 3
   },

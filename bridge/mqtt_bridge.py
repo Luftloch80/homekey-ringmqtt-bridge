@@ -120,6 +120,11 @@ class Bridge:
             client.subscribe(availability_topic, qos=0)
             log.info("Abonniert: %s", availability_topic)
 
+        doorbell_topic = cfg["doorbell"].get("topic")
+        if cfg["doorbell"].get("enabled") and doorbell_topic:
+            client.subscribe(doorbell_topic, qos=0)
+            log.info("Abonniert: %s", doorbell_topic)
+
     def _on_disconnect(self, client, userdata, rc):
         self._connected = False
         events.publish("mqtt_status", {"connected": False})
@@ -134,6 +139,8 @@ class Bridge:
                 self._handle_lock_state_message(msg.payload)
             elif msg.topic == cfg["homekey"].get("availability_topic"):
                 self._handle_availability_message(msg.payload)
+            elif cfg["doorbell"].get("enabled") and msg.topic == cfg["doorbell"].get("topic"):
+                self._handle_doorbell_message(msg.payload, cfg["doorbell"])
         except Exception:
             log.exception("Fehler bei der Verarbeitung einer MQTT-Nachricht")
 
@@ -150,6 +157,22 @@ class Bridge:
         """None = noch keine Meldung erhalten (Status unbekannt)."""
         with self._lock:
             return self._esp_online
+
+    # -- Klingel-Erkennung einer zusaetzlichen Gegensprechanlage -------------
+    def _handle_doorbell_message(self, raw_payload: bytes, doorbell_cfg: dict):
+        """Ein beliebiger Sensor/Satelliten-Geraet (z.B. ein per ESPHome an
+        das Klingelsignal einer Siedle-Anlage angeschlossener Opto-Abgriff)
+        meldet hier ein Klingel-Ereignis. Nur payload_on (Standard "ON")
+        loest eine Anzeige aus, andere Werte (z.B. "OFF" bei binary_sensor-
+        Zustandstopics) werden ignoriert."""
+        value = raw_payload.decode("utf-8", errors="replace").strip()
+        payload_on = str(doorbell_cfg.get("payload_on") or "ON")
+        if value.lower() != payload_on.lower():
+            return
+        name = doorbell_cfg.get("name") or "Türklingel"
+        log.info("Klingel erkannt (%s)", name)
+        events.publish("ding", {"name": name})
+
 
     # -- HomeKey-ESP32 tap handling --------------------------------------
     def _handle_auth_message(self, raw_payload: bytes):
