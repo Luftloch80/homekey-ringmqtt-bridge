@@ -201,6 +201,17 @@
             </div>
 
             <div class="card">
+              <h2>Türklingel (z. B. Siedle)</h2>
+              <p class="muted">Zeigt ein Klingel-Ereignis einer zusätzlichen, unabhängigen Gegensprechanlage (z. B. Siedle) im Live-Feed an. Dafür wird ein eigener Sensor/Satelliten-Gerät benötigt (z. B. ein per ESPHome angebundener Opto-Abgriff am Klingelsignal), der auf das unten angegebene Topic published.</p>
+              <div class="grid2">
+                <label class="checkbox"><input type="checkbox" name="doorbell.enabled" /> Türklingel-Erkennung aktivieren</label>
+                <label>MQTT-Topic<input type="text" name="doorbell.topic" placeholder="siedle/klingel/state" /></label>
+                <label>Erwarteter Payload-Wert bei Klingeln<input type="text" name="doorbell.payload_on" placeholder="ON" /></label>
+                <label>Anzeigename<input type="text" name="doorbell.name" placeholder="Siedle" /></label>
+              </div>
+            </div>
+
+            <div class="card">
               <h2>Zugriff</h2>
               <div class="grid2">
                 <label>Sperrzeit nach Tap (Sekunden)<input type="number" name="access.cooldown_seconds" /></label>
