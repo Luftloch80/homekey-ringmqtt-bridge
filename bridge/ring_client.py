@@ -160,6 +160,9 @@ class RingClient:
         cfg = self.config.get()
         if not (cfg["ring"].get("enabled") and cfg["ring"].get("device_id")):
             return
+        if not cfg["ring"].get("ding_listener", True):
+            log.info("Ring-Klingel-Listener deaktiviert (ring.ding_listener = false)")
+            return
         with self._lock:
             ring = self._ring
             if ring is None or self._listener is not None:
