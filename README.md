@@ -170,6 +170,7 @@ verwaltet, kann aber auch direkt editiert werden:
 | `homekey.availability_topic` | wird abonniert (`<id>/status`, "online"/"offline") - zeigt die Erreichbarkeit von HomeKey-ESP32 in der Sidebar an |
 | `ring.enabled` | Ring-Intercom-Steuerung aktiv |
 | `ring.email` / `ring.token` | vom Web-Interface beim Login gesetzt (Refresh-Token, kein Passwort) |
+| `ring.ding_listener` | Klingel-Ereignisse per Push empfangen und im Live-Feed anzeigen (Standard `true`; `false` schaltet das Push-Listening ab) |
 | `ring.fcm_credentials` | Push-Registrierung fuer das dauerhafte Ding-Listening (wird automatisch verwaltet) |
 | `ring.device_id` / `ring.device_name` | ausgewaehlte Ring-Intercom (Web-Interface &rarr; Ring-Konto) |
 | `access.cooldown_seconds` | Mindestabstand zwischen zwei Aktionen desselben Tags/HomeKey |

@@ -45,6 +45,10 @@ DEFAULT_CONFIG = {
         "token": {},
         "device_id": None,
         "device_name": "",
+        # Dauerhaftes Push-Listening auf Klingel-Ereignisse (Dings) fuer den
+        # Live-Feed. Abschalten, wenn das Klingeln anderweitig (z.B. Scrypted)
+        # verarbeitet wird und keine zweite Ring-Push-Registrierung noetig ist.
+        "ding_listener": True,
         # FCM-Registrierung fuer das dauerhafte Push-Listening auf
         # Klingel-Ereignisse (Dings) - kein Polling, siehe ring_client.py.
         "fcm_credentials": {},
